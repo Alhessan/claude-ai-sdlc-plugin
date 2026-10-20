@@ -14,9 +14,9 @@ This is **Stage 1 only**. Do not write `spec.md` or `plan.md`, do not change any
 design the implementation beyond what's needed to state constraints.
 
 ## 1. Load context
-Read `CLAUDE.md`, `intent/README.md`, `intent/_TEMPLATE.md`, and the most recent
-`intent/*/intent.md` as an example of format and level of evidence. If `intent/` doesn't exist,
-suggest running `/sdlc-kit:init` first.
+Read `CLAUDE.md`, `intent/README.md` and `intent/_TEMPLATE.md`. If `intent/` doesn't exist, suggest
+running `/sdlc-kit:init` first. Don't read other intents as examples: their constraints, decisions
+and scope leak into the new one.
 
 Run `intents status` (on your PATH while this plugin is enabled). It lists every intent with its
 stage, including drafts that exist only on other people's `docs/intent-*` branches, and **reserved
@@ -25,6 +25,9 @@ slugs**: work other intents promised as a follow-up but nobody has written.
   this intent, and say where it was promised.
 - **If an existing intent or draft overlaps the idea,** raise it before interviewing. This one may
   supersede it, depend on it, or belong inside it.
+
+Read another intent only when it's related: it promised this work, it overlaps, or this one depends
+on it. Read it for what relates, not as a model to copy.
 
 ## 2. Screen the request
 If it's a small fix (typo, one-line bug, dependency bump, doc tweak), say so and suggest a direct
