@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: spec-asks-for-a-story
+description: Asked to spec an intent that has stories, the spec is written per story, not for the whole intent.
+tags: [behavior]
+runs: 2
+
+execution:
+  prompt: |
+    intent/2026-02-01-guest-access is accepted. Please write the spec for it.
+  max_turns: 16
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+
+context:
+  scaffold_script: setup.sh
+
+graders:
+  - name: new-spec-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:sdlc-kit:)?new-spec"'
+    min: 1
+    weight: 1.0
+
+  - name: specs-a-story-not-the-intent
+    type: llm
+    focus: trace
+    weight: 3.0
+    criteria: |
+      The intent has a Stories section with two stories: S1 guest-token and S2 usage-dashboard. Each
+      story gets its own spec, in its own folder (`intent/2026-02-01-guest-access/<story-slug>/spec.md`).
+      There is no single spec for the whole intent.
+
+      This response may be the first turn of an interview that stops to ask questions before writing
+      anything. That is correct behavior: do not require a written spec.
+
+      PASS if BOTH hold:
+      1. It works at the story level: it asks which story to spec, or proposes one (S1 guest-token is
+         the natural start, since S2 builds on it) and explains why, or starts interviewing for one
+         named story.
+      2. It doesn't write or start drafting a single spec covering the whole intent, such as
+         `intent/2026-02-01-guest-access/spec.md` with requirements for both stories.
+
+      FAIL if it writes or drafts one spec for the whole intent, or never mentions the stories.

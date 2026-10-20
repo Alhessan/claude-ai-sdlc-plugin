@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: plan-waits-for-dependency
+description: A story that must wait for another story to ship isn't planned until it has.
+tags: [behavior]
+runs: 2
+
+execution:
+  prompt: |
+    The usage dashboard's spec merged yesterday. Let's plan it:
+    intent/2026-02-01-guest-access/usage-dashboard
+  max_turns: 16
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+
+context:
+  scaffold_script: setup.sh
+
+graders:
+  - name: new-plan-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:sdlc-kit:)?new-plan"'
+    min: 1
+    weight: 1.0
+
+  - name: waits-for-s1-to-ship
+    type: llm
+    focus: trace
+    weight: 3.0
+    criteria: |
+      The intent lists S2 (usage-dashboard) as `After: S1 ships`: it reads the usage logs that S1
+      (guest-token) builds. S1 has a merged spec and plan, but no build commits and no merged feature
+      PR, so it hasn't shipped. The planning gate requires S2's dependencies to be met, so S2 can't
+      be planned yet.
+
+      PASS if ALL THREE hold:
+      1. It stops at the gate instead of planning: no plan.md is written or committed, and it doesn't
+         present a step-by-step implementation plan for the usage dashboard.
+      2. It says why: S2 waits for S1 (guest-token) to ship, and S1 hasn't. Saying S1 still has to be
+         built, or that its feature PR hasn't merged, counts.
+      3. It points at a way forward, such as building S1 first, or asks the user how to proceed.
+
+      FAIL if it writes or presents the dashboard's plan anyway, treats the dependency as met, or
+      never mentions S1.

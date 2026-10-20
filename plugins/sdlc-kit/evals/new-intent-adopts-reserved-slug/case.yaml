@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: new-intent-adopts-reserved-slug
+description: A new idea that another intent already promised as a follow-up should take the reserved slug.
+tags: [behavior]
+runs: 2
+
+execution:
+  prompt: |
+    Old guest conversations never get deleted. They pile up forever, which is a privacy problem, and
+    nobody has picked it up. I'd like to get this written up properly as a new piece of work.
+  max_turns: 16
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+
+context:
+  scaffold_script: setup.sh
+
+graders:
+  - name: new-intent-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:sdlc-kit:)?new-intent"'
+    min: 1
+    weight: 1.0
+
+  - name: adopts-the-reserved-slug
+    type: llm
+    focus: last_message
+    weight: 3.0
+    criteria: |
+      The repo's accepted intent `intent/2026-01-10-guest-chat/intent.md` lists "Deleting old guest
+      conversations" as out of scope with `→ follow-up: guest-chat-retention`. That marker reserves
+      the slug `guest-chat-retention` for exactly this work. A new intent for it should take that
+      slug, so the earlier promise resolves to it.
+
+      This response may be the first turn of an interview that stops to ask questions before
+      drafting anything. That is correct behavior: do not require a written intent file.
+
+      PASS if BOTH hold:
+      1. It connects the idea to the existing promise: it names the reserved slug
+         `guest-chat-retention`, or the guest-chat intent's follow-up, and proposes using that slug
+         (for example `intent/<date>-guest-chat-retention/`) for the new intent.
+      2. It doesn't overstep: it doesn't claim to have merged or approved anything, and doesn't
+         start writing a spec or code.
+
+      FAIL if it never mentions that this work was already promised and reserved, or if it picks an
+      unrelated slug without acknowledging the reservation.
