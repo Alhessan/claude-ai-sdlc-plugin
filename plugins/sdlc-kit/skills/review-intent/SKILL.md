@@ -8,9 +8,12 @@ argument-hint: "[intent folder | backlog]"
 
 Intent folder: **$ARGUMENTS**
 
-If that's empty, list every `intent/*/intent.md` that isn't `accepted`, with its status, its open
-question count, and its PR if it has one. Also list `deferred` intents whose **Revisit** month has
-arrived. Ask which one to review. `backlog` lists those and stops.
+If that's empty, run `intents status` (on your PATH while this plugin is enabled) and list every
+intent that isn't `accepted`, with its status, its open question count, and its PR if it has one.
+Include drafts that exist only on other `docs/intent-*` branches; `intents status` shows them. Also
+list `deferred` intents whose **Revisit** month has arrived, and the **reserved slugs**: work an
+intent promised as a follow-up, or depends on, that nobody has written yet. Ask which one to review.
+`backlog` lists those and stops.
 
 This is **Stage 1 only**. Do not write `spec.md` or `plan.md` and do not change code.
 
@@ -38,6 +41,8 @@ during the build.
   and add a dated amendment note. The template's Decisions section explains the convention. Never
   overwrite silently: a reader has to see what changed and why.
 - **Add a Decisions row per change:** what changed, what forced it, who decided, the date.
+- **Adding or dropping a story is an amendment too.** Strike a dropped story's whole line through,
+  so it stops counting. Never renumber or reuse a story's id or slug.
 - **Branch `docs/intent-<slug>-amend-<topic>`,** commit the intent alone, and open a PR titled
   `docs(intent): amend <slug> — <what changed>`. Never merge it.
 - Then work only the questions the amendment reopens. Don't re-interview what's already settled.
@@ -54,9 +59,21 @@ The listed open questions are the easy half. Review the whole intent for what it
 - **No out-of-scope section,** or one that leaves the obvious adjacent work ambiguous.
 - **An uncovered policy surface:** the intent touches an area no policy skill covers. Note it; never
   imply a policy checked it.
-- **Duplicates.** Search `intent/*/intent.md` for an intent that overlaps, supersedes, or is
-  superseded by this one.
+- **Duplicates.** Look for an intent that overlaps, supersedes, or is superseded by this one: in
+  `intent/*/intent.md`, and in the drafts on other branches that `intents status` lists. A draft is
+  invisible from this branch otherwise. If this intent replaces one, record it with **Supersedes**,
+  and say the other's PR should be closed.
 - **A solution in place of a problem.** Ask what problem it solves.
+- **Too big for one story.** A dependency or sign-off that blocks only part of the outcome, or parts
+  useful on their own to different users, mean it should split into stories. Two separate problems
+  mean two intents linked by **Depends on**. More than five stories usually means two intents. Each
+  story must be safe to ship on its own.
+- **Relations written as prose.** "A separate intent", "a follow-up", "depends on the X work" can't
+  be checked. Propose a **Depends on** or **Supersedes** entry, or a `→ follow-up: <slug>` marker,
+  with the slug. Run `intents check intent/<folder>/intent.md`. Every error must be fixed, and its
+  warnings point at prose like this.
+- **A dependency on unwritten work.** Depending on a reserved slug is fine, but the plan is blocked
+  until that work ships. Say so, and ask who will write it.
 
 Add each gap to the list to resolve, with your proposed answer. Report gaps you can't resolve as new
 open questions rather than answering them yourself.
@@ -96,6 +113,7 @@ and what's still open. Then ask the user which outcome they want. Never pick it 
 - Keep the rest of the file true: if a decision changes scope, constraints or non-goals, edit those
   sections too and note the change in Decisions. Never leave a decision that contradicts the body.
 - Verified claims lose their *assumed* marker, and gain the evidence.
+- If it **Supersedes** a merged intent, amend that intent's Status to `superseded` in the same commit.
 
 ## 7. Commit, after the user confirms
 Show the full diff and **ask before committing**. Once they confirm:
@@ -106,5 +124,6 @@ Show the full diff and **ask before committing**. Once they confirm:
 4. **Never merge it.** Merging is the product owner's approval, including for `deferred` and
    `rejected`, which are merged so the record stays in `intent/`.
 
-Then say what's next: `/sdlc-kit:new-spec intent/<folder>` once the PR is merged as `accepted`, or who
-is being waited on.
+Then say what's next: `/sdlc-kit:new-spec intent/<folder>` once the PR is merged as `accepted` (for an
+intent with stories, `intent/<folder>/<story-slug>`, starting with a story that waits on nothing), or
+who is being waited on.

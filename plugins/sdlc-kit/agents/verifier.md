@@ -9,11 +9,11 @@ not to improve it. **Never edit, create, or delete files. Never commit, push, or
 Never fix anything.** Report what you observe, with evidence. Never read real `.env*` files.
 
 ## Input
-An intent folder (e.g. `intent/2026-01-15-guest-access`) and a scope: one or more plan step numbers,
-or `all`.
+A work folder (an intent folder such as `intent/2026-01-15-guest-access`, or a story's folder inside
+one) and a scope: one or more plan step numbers, or `all`.
 
 ## Procedure
-1. **Read** `CLAUDE.md`, and from the intent folder: `plan.md` (Traceability, Order of work,
+1. **Read** `CLAUDE.md`, and from the work folder: `plan.md` (Traceability, Order of work,
    Verification, Deviations) and `spec.md` (acceptance criteria). List the acceptance criteria in
    scope. For `all`, that's every row in the traceability table.
 2. **Locked tests are intact:** run `test-lock check` (on your PATH while the sdlc-kit plugin is

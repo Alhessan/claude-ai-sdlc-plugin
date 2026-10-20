@@ -1,14 +1,16 @@
 ---
 name: build
 description: Implement one step of a merged plan.md test-first (Stage 3 Build / Stage 4 Test of the AI-native SDLC). It writes the step's acceptance tests from the spec, locks them, writes code until they pass, runs the project checks, and commits. `finish` verifies the whole intent and opens the PR. Use when someone asks to build, implement, or code a step of an intent whose plan.md is on the default branch. Do NOT use for ideas, specs, or plans (use /sdlc-kit:new-intent, /sdlc-kit:new-spec, /sdlc-kit:new-plan), or for small fixes without a plan.
-argument-hint: <intent folder> [step number | next | finish]
+argument-hint: <work folder> [step number | next | finish]
 ---
 
 # /sdlc-kit:build: implement a plan step test-first
 
-Arguments: **$ARGUMENTS**. The first is always the intent folder. The second is a step number from
-`plan.md`'s Order of work, `next` (the default; see §0.3), or `finish`. If the first argument isn't an
-intent folder (e.g. `/sdlc-kit:build next`), ask for the folder instead of guessing.
+Arguments: **$ARGUMENTS**. The first is always the **work folder**: the intent's folder, or, for an
+intent with stories, the story's folder inside it (`intent/<date>-<slug>/<story-slug>/`). Its
+`spec.md` and `plan.md` are there. The second is a step number from `plan.md`'s Order of work, `next`
+(the default; see §0.3), or `finish`. If the first argument isn't a work folder (e.g.
+`/sdlc-kit:build next`), ask for the folder instead of guessing.
 
 **The test lock:** `test-lock` is on your PATH while this plugin is enabled (`lock`, `status`,
 `check`). The user unlocks, in their own terminal from the project root, with:
@@ -22,10 +24,11 @@ pass. If it has no CI, the local checks in this loop are the gate. Never skip th
 Stop and say why whenever a check below fails.
 
 ### 0.1 Approved plan
-`<intent folder>/plan.md` is on the default branch. Merged means the build is approved.
+`<work folder>/plan.md` is on the default branch. Merged means the build is approved.
 
 ### 0.2 Branch and lane
-- `<slug>` is the intent folder name without its date (e.g. `guest-access`).
+- `<slug>` is the work folder's name without its date: the intent's slug (e.g. `guest-access`), or
+  the story's.
 - **Lanes.** If the plan's Order of work groups steps that can run in parallel (e.g. "Steps 1–7
   (backend) and 8–9 (frontend) can run in parallel worktrees"), each group is a **lane**, named by its
   label. A plan with no such groups has a single lane containing every step.
@@ -152,15 +155,20 @@ step touches a database and the plan names integration tests, run them against a
    `feat(<slug>): step N:` commit reachable from it (`git log --grep`, **without** `--all`).
 2. Run the `verifier` subagent with scope `all`. **Continue only on VERDICT: READY.**
 3. Run the plan's end-to-end check and record what you observed.
-4. Push `feat/<slug>` (`git push -u origin feat/<slug>`) and open a PR titled `feat: <intent title>`.
+4. **If this is the intent's last story** (`intents status <slug>` shows every other story shipped or
+   dropped), this PR completes the intent: also run the checks the intent's Desired outcome gives for
+   how we'll know it worked, and record what you observed. Without stories, step 3 already covers them.
+5. Push `feat/<slug>` (`git push -u origin feat/<slug>`) and open a PR titled `feat: <intent title>`,
+   with the story appended for a story (`feat: <intent title>: S2 <story-slug>`).
    Pass the body with `--body-file` (a file), not inline. Its body contains:
-   - links to `intent.md`, `spec.md`, and `plan.md`;
+   - links to `intent.md`, `spec.md`, and `plan.md`, and for a story, its line from the intent;
+   - for the intent's last story, the intent's outcome checks and their results;
    - **Evidence:** every check command with pass/fail/skip counts, the verifier's criteria table, the
      `test-lock check` output, and the end-to-end result (essential when there's no CI);
    - MANUAL checks a human must do;
    - sign-offs carried from the spec and plan, each unchecked;
    - policy compliance and deviations from the plan.
-5. **Never merge it.** After merge, tell the user to run `"${CLAUDE_PLUGIN_ROOT}/bin/test-lock"
+6. **Never merge it.** After merge, tell the user to run `"${CLAUDE_PLUGIN_ROOT}/bin/test-lock"
    unlock` in their own terminal.
 
 ## Hard rules
