@@ -8,7 +8,8 @@ argument-hint: "[intent folder | backlog]"
 
 Intent folder: **$ARGUMENTS**
 
-If that's empty, run `intents status` (on your PATH while this plugin is enabled) and list every
+If that's empty, run `intents status` (on your PATH while this plugin is enabled; if it can't run,
+read `intent/*/intent.md` and search for `follow-up:` markers yourself) and list every
 intent that isn't `accepted`, with its status, its open question count, and its PR if it has one.
 Include drafts that exist only on other `docs/intent-*` branches; `intents status` shows them. Also
 list `deferred` intents whose **Revisit** month has arrived, and the **reserved slugs**: work an
@@ -71,7 +72,8 @@ The listed open questions are the easy half. Review the whole intent for what it
 - **Relations written as prose.** "A separate intent", "a follow-up", "depends on the X work" can't
   be checked. Propose a **Depends on** or **Supersedes** entry, or a `→ follow-up: <slug>` marker,
   with the slug. Run `intents check intent/<folder>/intent.md`. Every error must be fixed, and its
-  warnings point at prose like this.
+  warnings point at prose like this. If `intents` can't run, read the Out of scope and Constraints
+  sections for such prose yourself.
 - **A dependency on unwritten work.** Depending on a reserved slug is fine, but the plan is blocked
   until that work ships. Say so, and ask who will write it.
 

@@ -26,6 +26,10 @@ slugs**: work other intents promised as a follow-up but nobody has written.
 - **If an existing intent or draft overlaps the idea,** raise it before interviewing. This one may
   supersede it, depend on it, or belong inside it.
 
+If `intents` can't run (it needs python3 and git), find the same things by hand. Search `intent/` and
+the policy skills for `follow-up:`: each marker's slug is reserved for the work it describes. Drafts
+are intent folders on other `docs/intent-*` branches.
+
 Read another intent only when it's related: it promised this work, it overlaps, or this one depends
 on it. Read it for what relates, not as a model to copy.
 

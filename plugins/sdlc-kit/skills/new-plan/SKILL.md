@@ -25,7 +25,9 @@ Stop and say why if any of these fail:
 - **Dependencies are met:** `intents deps <work folder>` exits 0. It checks the intent's
   **Depends on** and the story's `After:`, pull requests included. If the Constraints still describe a
   dependency in prose, check that against reality too (`gh pr view`, `git log`), and suggest writing
-  it as a **Depends on** entry.
+  it as a **Depends on** entry. If `intents` can't run, check each dependency by hand the same way:
+  `After: S1` needs S1's spec on the default branch; anything that must ship needs its feature PR
+  merged. Never skip the gate.
 - If `plan.md` already exists, switch to **update mode**: change only what the user asks, and keep the
   rest.
 

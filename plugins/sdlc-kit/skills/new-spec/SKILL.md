@@ -23,7 +23,8 @@ must do and how it behaves, not which files change.
 - **For a story:** it's in the intent's Stories list and not struck through. Run
   `intents deps <work folder>`. Every dependency that needs **its spec merged** must be met, because
   this spec builds on that story's contract. Dependencies that need to **ship** block only the plan;
-  note them in the spec's summary.
+  note them in the spec's summary. If `intents` can't run, check by hand that each story this one
+  comes `After:` has its `spec.md` on the default branch. Never skip the check.
 - **Decide if a spec is needed.** Skip it when the change has no user-facing behavior, no API or data
   contract, and no policy surface (e.g. CI or tooling). In that case, say "go straight to
   `/sdlc-kit:new-plan`", explain why, suggest recording that decision in the intent, and stop.
