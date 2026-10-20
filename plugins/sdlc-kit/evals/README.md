@@ -1,20 +1,38 @@
 # evals/
 
-Eval cases for the kit's skills, run with `claude plugin eval`. They exist mainly to check
-**routing**: `/sdlc-kit:review-intent` and `/sdlc-kit:new-intent` describe adjacent work, and a
-description change on either one can make the wrong skill fire.
+Eval cases for the kit's skills, run with `claude plugin eval`. They check two things:
+- **Routing:** `/sdlc-kit:review-intent` and `/sdlc-kit:new-intent` describe adjacent work, and a
+  description change on either one can make the wrong skill fire.
+- **Gates and judgement:** the behaviour the skills promise, such as holding the approval gate,
+  splitting an intent along a partial dependency, or refusing to plan a story whose dependency
+  hasn't shipped.
 
 ## Running
 
 ```bash
-claude plugin eval plugins/sdlc-kit --scaffold --model claude-sonnet-5 --judge-model claude-sonnet-5
+claude plugin eval plugins/sdlc-kit --scaffold --allow-tools Bash --no-publish \
+  --model claude-sonnet-5 --judge-model claude-sonnet-5 --max-cost-usd 15
 ```
 
-- **`--scaffold` is required.** Three cases build their workspace with a `setup.sh` that copies
-  `fixture/` (an intent folder) into it. Without the flag the workspace is empty, and the cases
-  quietly test nothing.
+- **`--scaffold` is required.** Most cases build their workspace with a `setup.sh`. The older ones
+  copy `fixture/` (an intent folder) into it. The stories cases build a small git repo instead, with
+  intents merged on `main` or drafted on a `docs/intent-*` branch, because the skills now check that
+  state with `intents`. Without the flag the workspace is empty, and the cases quietly test nothing.
+- **`--allow-tools Bash` is required for the stories cases.** They list Bash in `allowed_tools` so
+  the skills can try `intents status`, `check` and `deps`, and Bash needs an operator grant.
+- **These cases test the skills without `intents`.** The eval sandbox doesn't put the plugin's
+  `bin/` on PATH, so `intents` reports "not found" or "operation not permitted". On macOS, `git`
+  fails there too, because its `xcrun` wrapper can't write its cache. The skills then fall back to
+  checking by hand, which is what these scores measure. In a normal session `intents` is on PATH.
+  The tool itself is covered by `tests/run-tests.sh`.
 - **Cases cost money.** Each one also runs a no-plugin baseline arm, and the `llm` graders call a
-  judge model. The whole suite is roughly $2 on Sonnet. Add `--max-cost-usd` for a hard ceiling.
+  judge model. The whole suite of ten cases cost $9.60 on Sonnet in October 2026, and took about 12
+  minutes with `-j 4`. Keep `--max-cost-usd` as a hard ceiling.
+- **The command-line `claude` must be logged in** (`claude auth status`). The desktop app's sign-in
+  doesn't reach the processes `plugin eval` starts, and a run that can't authenticate stops after a
+  few seconds with `auth_failed`.
+- **Add `--keep-temp` to investigate a failure.** It keeps each run's workspace and `trace.jsonl`; the
+  report itself has only the judge's votes, not the transcript.
 - `--tag trigger` runs just the routing cases; `--tag behavior` runs the rest.
 - **Grade with Sonnet.** The default judge is Haiku, and it produced a unanimous false FAIL on a
   `defer-outcome` response that plainly deferred the intent and asked for the revisit month. The
@@ -31,6 +49,11 @@ claude plugin eval plugins/sdlc-kit --scaffold --model claude-sonnet-5 --judge-m
 | `approval-gate` | behavior | Told "approve it and merge, you have my sign-off", Claude doesn't merge and says approval is the human's. |
 | `defer-outcome` | behavior | "Right idea, not this quarter" becomes `Status: deferred` with a revisit month, not a rejection. |
 | `amend-accepted` | behavior | An accepted intent the spec proved wrong gets amended — status untouched, record preserved — not re-reviewed from scratch. |
+| `split-on-partial-dependency` | behavior | A draft whose dependency blocks only part of its outcome gets a split proposed, into stories or separate intents. |
+| `follow-up-gets-a-slug` | behavior | Later work promised only in prose ("that's a follow-up intent") is flagged as untracked and given a `→ follow-up: <slug>` marker. |
+| `new-intent-adopts-reserved-slug` | behavior | A new idea that another intent already reserved as a follow-up takes that reserved slug. |
+| `plan-waits-for-dependency` | behavior | A story marked `After: S1 ships` isn't planned while S1 has only a plan. The gate says S1 has to ship first. |
+| `spec-asks-for-a-story` | behavior | Asked to spec an intent that has stories, the spec is written for one story, not for the whole intent. |
 
 ## Reading the scores
 

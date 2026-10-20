@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: follow-up-gets-a-slug
+description: Later work promised in prose should be flagged as untracked and given a follow-up slug.
+tags: [behavior]
+runs: 2
+
+execution:
+  prompt: |
+    Can you review intent/2026-03-05-guest-chat/intent.md? I think it's nearly ready to go.
+  max_turns: 16
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+
+context:
+  scaffold_script: setup.sh
+
+graders:
+  - name: review-intent-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:sdlc-kit:)?review-intent"'
+    min: 1
+    weight: 1.0
+
+  - name: gives-follow-ups-a-slug
+    type: llm
+    focus: last_message
+    weight: 3.0
+    criteria: |
+      The intent's Out of scope promises two pieces of later work in prose only: "Purging stored
+      guest conversations. That's a follow-up intent." and "Routing all model calls through a
+      gateway. That's a separate intent." Written like that, nothing tracks them, so they get lost.
+      The kit's convention is to end such an item with a `→ follow-up: <slug>` marker, which reserves
+      the slug until someone writes that intent.
+
+      This response may be the first turn of an interview that stops to ask questions before editing.
+      That is correct behavior: do not require the file to be edited already.
+
+      PASS if BOTH hold:
+      1. It flags at least one of those two prose promises as untracked or easy to lose, and
+         proposes recording it in a checkable way: a `→ follow-up: <slug>` marker, or a concrete slug
+         for the future intent. Proposing it as a question to the user counts.
+      2. It doesn't overstep: it doesn't mark the intent accepted, doesn't claim to have merged
+         anything, and doesn't start writing a spec or code.
+
+      FAIL if it passes over both prose promises without suggesting a way to track them, or if it
+      accepts, merges, or starts designing the intent.

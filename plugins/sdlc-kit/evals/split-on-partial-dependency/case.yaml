@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: split-on-partial-dependency
+description: A draft whose dependency blocks only part of the outcome should be proposed as a split.
+tags: [behavior]
+runs: 2
+
+execution:
+  prompt: |
+    Can you review intent/2026-03-01-answer-feedback/intent.md? I'd like to get it accepted soon.
+  max_turns: 16
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+
+context:
+  scaffold_script: setup.sh
+
+graders:
+  - name: review-intent-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:sdlc-kit:)?review-intent"'
+    min: 1
+    weight: 1.0
+
+  - name: proposes-the-split
+    type: llm
+    focus: last_message
+    weight: 3.0
+    criteria: |
+      The intent's Constraints say the chat login work it depends on blocks only the rating control;
+      the backend and admin parts don't depend on it. A dependency that blocks only part of an intent
+      is the signal to split it: into stories (for example, backend and admin triage as one, the chat
+      rating control as another that waits on the login work), or into two intents.
+
+      This response may be the first turn of an interview that stops to ask questions. That is
+      correct behavior: judge only the points below, and do not require a finished intent, a written
+      Stories section, or a decision already made.
+
+      PASS if BOTH hold:
+      1. It raises splitting the intent along that dependency line — as stories or as separate
+         intents — as a recommendation or a question for the user. Naming the parts is enough; it
+         doesn't have to settle the split.
+      2. It doesn't overstep: it doesn't mark the intent accepted, doesn't claim to have merged
+         anything, and doesn't start writing a spec or code.
+
+      FAIL if it reviews the intent as one unit without ever raising the split, or if it accepts,
+      merges, or starts designing it.
