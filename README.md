@@ -25,6 +25,7 @@ idea ─► intent.md ──────► spec.md ─► plan.md ─► test-f
 | `/sdlc-kit:deploy` | 5 Deploy | Follows the project's runbook: read-only status, then human go-ahead, then a rollback point, then one step at a time, then a report. |
 | Guard hook | All | Blocks access to real `.env*` files and edits to paths listed in `.claude/protected-paths`. |
 | Test-lock hook + `test-lock` | 3–4 | Freezes tests once written (below). |
+| `intents` + intents hook | All | Derives the stage of every intent and story from git, checks the relations between them, and answers whether a story's dependencies are met (below). |
 
 ## The test lock
 A skill can only *ask* Claude not to weaken tests. The lock *enforces* it:
@@ -46,6 +47,31 @@ A skill can only *ask* Claude not to weaken tests. The lock *enforces* it:
   "<plugin path>/bin/test-lock" unlock <file>     # one file
   "<plugin path>/bin/test-lock" unlock            # everything (e.g. after the feature PR merges)
   ```
+
+## Intents, stories and relations
+An intent can list stories that are specced, planned and built on their own, and intents can depend
+on, supersede and promise each other. Written as prose, those relations get lost, so `intents` reads
+a few fixed forms instead (`lib/intents.py` has the full grammar):
+- **Header fields** in intent.md: `Depends on: <slug>, #N` and `Supersedes: <slug>`. A note can
+  follow in parentheses or after a full stop.
+- **A `## Stories` section:** `- **S1 <story-slug>**: what ships. Outcomes: 1. After: S2.` Waiting on
+  a story of the same intent means its spec merged; add ` ships` to wait for it to ship.
+- **A follow-up marker,** `→ follow-up: <slug>`, anywhere in an intent folder or a policy skill. It
+  reserves the slug until an intent or story uses it.
+
+Three commands, on PATH while the plugin is enabled. None of them changes anything:
+- **`intents status [<slug>]`** derives every stage from git and is never declared: draft (including
+  drafts that exist only on `docs/intent-*` branches), the intent's Status, then specced, planned,
+  building and shipped. It also lists reserved slugs and who waits on them.
+- **`intents check [<file>...]`** reports broken relations and layout: a Supersedes whose old intent
+  isn't marked superseded, a dependency cycle, a slug used twice, a spec outside its story's folder.
+- **`intents deps <slug>`** exits 1 unless a story's dependencies are met. Pull requests are checked
+  with `gh`.
+
+**A PostToolUse hook runs `check`** on every markdown file Claude writes in an intent folder, and on
+policy skills. Relation errors go back to Claude to fix in the same change. Prose that promises later
+work ("a separate intent") with no follow-up marker only adds a note, and only for the text that edit
+wrote: wording heuristics never block.
 
 ## Install
 There are two ways to install. Both install the plugin for your user, so every project and session
@@ -81,8 +107,9 @@ defines and the plugin inside it are both named `sdlc-kit`. You add the marketpl
 }
 ```
 
-**Requirements:** `git`, `jq`, `bash`, and `python3` (3.9+) for add-only locks. Without `python3`,
-Python test files fall back to whole-file locks. `gh` is needed for PR steps.
+**Requirements:** `git`, `jq`, `bash`, and `python3` (3.9+) for add-only locks and `intents`.
+Without `python3`, Python test files fall back to whole-file locks and the intents hook does nothing.
+`gh` is needed for PR steps.
 
 ## Conventions the kit relies on
 - `CLAUDE.md` lists each project's check command. The build and the verifier run exactly those.

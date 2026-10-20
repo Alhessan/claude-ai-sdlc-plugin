@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Regression suite for sdlc-kit's test lock and guard hooks. It runs the plugin's real bin/, lib/ and
-# hooks/ files (not copies) against a throwaway git repo that plays the role of a project.
+# Regression suite for sdlc-kit's test lock, guard hooks and intents tool. It runs the plugin's real
+# bin/, lib/ and hooks/ files (not copies) against throwaway git repos that play the role of a project.
 set -uo pipefail
 
 KIT=$(cd "$(dirname "$0")/../plugins/sdlc-kit" && pwd)
@@ -200,6 +200,221 @@ out=$("$L" check 2>&1); code=$?
 [[ $code == 1 && "$out" == *"can't be read from git"* && "$out" != *Traceback* ]]; expect 0 "unreadable lock point fails check cleanly" "$?"
 run 0 "unlock all" "$L" unlock
 edit 0 "Edit test with no lock" $T "assert 1 == 1" "assert True"
+
+# ---------------------------------------------------------------- intents
+# A second throwaway project with intents at every stage, a bare origin, and a draft that exists
+# only on origin's docs/intent-* branch.
+I="$KIT/bin/intents"
+IH="$KIT/hooks/intents-check.sh"
+IP="$SP/ip"
+mkdir -p "$IP" && cd "$IP" || exit 1
+git init -q -b main && git config user.email t@t && git config user.name t
+at() { local d=$1; shift; GIT_AUTHOR_DATE="${d}T12:00:00" GIT_COMMITTER_DATE="${d}T12:00:00" "$@"; }
+mkintent() { # folder status [header lines] [out-of-scope lines]
+  mkdir -p "intent/$1"
+  printf '# Intent: %s\n\n- **Author:** t\n- **Status:** %s\n%b\n## Problem\nx\n\n## Out of scope\n%b\n' \
+    "$1" "$2" "${3:-}" "${4:-}" > "intent/$1/intent.md"
+}
+# subst <file> <from> <to>: replace once, and fail loudly if <from> isn't there.
+subst() { python3 -c 'import sys; p, a, b = sys.argv[1:]; s = open(p).read(); assert a in s, a; open(p, "w").write(s.replace(a, b, 1))' "$@"; }
+ireset() { git checkout -q -- . && git clean -fdq intent .claude; }
+# outp <exit> <label> <regex> <cmd...>: the command exits <exit> and its output matches <regex>.
+outp() {
+  local want=$1 label=$2 pat=$3 o c; shift 3
+  o=$("$@" 2>&1); c=$?
+  grep -Eq -- "$pat" <<<"$o" || c="$c, no match for /$pat/"
+  expect "$want" "$label" "$c"
+}
+# outn: as outp, but the output must not match.
+outn() {
+  local want=$1 label=$2 pat=$3 o c; shift 3
+  o=$("$@" 2>&1); c=$?
+  grep -Eq -- "$pat" <<<"$o" && c="$c, matched /$pat/"
+  expect "$want" "$label" "$c"
+}
+ih() { printf '%s' "$1" | "$IH"; }  # feed hook JSON to the intents hook; with outn ... ., expect no output
+iedit() { jq -cn --arg p "$IP/$1" --arg n "$2" '{tool_name:"Edit",tool_input:{file_path:$p,old_string:"x",new_string:$n}}'; }
+iwrite() { jq -cn --arg p "$IP/$1" '{tool_name:"Write",tool_input:{file_path:$p,content:"x"}}'; }
+
+mkintent 2026-01-01-alpha accepted "" "- **Old data.** → follow-up: omega"
+mkintent 2026-01-02-beta accepted "- **Depends on:** #10\n"
+mkintent 2026-01-03-gamma accepted "- **Depends on:** alpha\n"
+cat >> intent/2026-01-03-gamma/intent.md <<'EOF'
+
+## Stories
+Each story ships on its own.
+
+- **S1 g-one**: the backend. Outcomes: 1.
+- **S2 g-two**: the admin page. Outcomes: 2. After: S1.
+- **S3 g-three**: the chat UI. Outcomes: 3. After: S2 ships, chatui-accounts.
+- ~~**S4 g-four**: exports. After: S1.~~ (Dropped 2026-01-04: not needed.)
+EOF
+mkintent 2026-01-04-delta deferred "- **Revisit:** 2026-06 (t)\n"
+mkintent 2026-01-06-zeta accepted
+mkdir -p .claude/skills/api-security .claude/skills/helper
+printf -- '---\nname: api-security\ndescription: Policy - API rules.\n---\n\n- The dashboard calls Dify directly. → follow-up: dify-gateway\n' > .claude/skills/api-security/SKILL.md
+printf -- '---\nname: helper\ndescription: Helps.\n---\n\nThis is a separate intent. → follow-up: helper-thing\n' > .claude/skills/helper/SKILL.md
+git add -A && at 2026-01-04 git commit -qm "docs(intent): intents"
+echo s > intent/2026-01-01-alpha/spec.md && echo p > intent/2026-01-01-alpha/plan.md
+echo s > intent/2026-01-02-beta/spec.md
+mkdir -p intent/2026-01-03-gamma/g-one && echo s > intent/2026-01-03-gamma/g-one/spec.md && echo p > intent/2026-01-03-gamma/g-one/plan.md
+git switch -q -c docs/spec && git add -A && at 2026-01-05 git commit -qm "docs(spec): specs"
+git switch -q main && at 2026-01-06 git merge -q --no-ff docs/spec -m "Merge spec PR"
+git switch -q -c feat/alpha
+echo t > t_alpha && git add -A && at 2026-01-08 git commit -qm "test(alpha): step 1: A1"
+echo c > c_alpha && git add -A && at 2026-01-09 git commit -qm "feat(alpha): step 1: thing"
+git switch -q main && at 2026-01-10 git merge -q --no-ff feat/alpha -m "Merge pull request #3 from x/feat/alpha"
+echo z > z && git add -A && at 2026-01-11 git commit -qm "feat: zeta (#5)" -m "* test(zeta): step 1: A1
+* feat(zeta): step 1: thing"
+git switch -q -c feat/g-one && echo t > t_gone && git add -A && at 2026-01-12 git commit -qm "test(g-one): step 1: A1"
+echo c > c_gone && git add -A && at 2026-01-12 git commit -qm "feat(g-one): step 1: backend"
+git switch -q main && git switch -q -c docs/intent-epsilon && mkintent 2026-01-07-epsilon draft
+git add -A && at 2026-01-13 git commit -qm "docs(intent): epsilon" && git switch -q main
+git init -q --bare "$SP/ip-origin.git" && git remote add origin "$SP/ip-origin.git"
+git push -q origin main feat/g-one docs/intent-epsilon 2>/dev/null && git remote set-head origin main >/dev/null
+git branch -q -D docs/intent-epsilon feat/g-one feat/alpha docs/spec && git fetch -q origin
+mkdir -p "$SP/gh-merged" "$SP/gh-open"
+printf '#!/bin/sh\n[ "$1" = pr ] && echo MERGED\n' > "$SP/gh-merged/gh"
+printf '#!/bin/sh\n[ "$1" = pr ] && echo OPEN\n' > "$SP/gh-open/gh"
+chmod +x "$SP/gh-merged/gh" "$SP/gh-open/gh"
+
+echo "== intents status: stages are derived from git"
+outp 0 "a merged feature branch is shipped" '2026-01-01-alpha +shipped +since 2026-01-09' "$I" status
+outp 0 "a squash merge body counts as shipped" '2026-01-06-zeta +shipped' "$I" status
+outp 0 "specced is dated by the merge, not the branch commit" '2026-01-02-beta +specced +since 2026-01-06' "$I" status
+outp 0 "step commits on an unmerged branch mean building" 'S1 g-one +building' "$I" status
+outp 0 "a story with nothing merged is accepted" 'S2 g-two +accepted' "$I" status
+outp 0 "a struck-through story is dropped" 'S4 g-four +dropped' "$I" status
+outp 0 "an intent with stories rolls up" '2026-01-03-gamma +in progress +0 of 3 stories shipped' "$I" status
+outp 0 "deferred shows its revisit month" '2026-01-04-delta +deferred .*revisit 2026-06' "$I" status
+outp 0 "a draft only on origin's docs/intent-* branch is listed" '2026-01-07-epsilon +draft +on origin/docs/intent-epsilon' "$I" status
+outp 0 "unmet dependencies are shown" 'S3 g-three .*waiting on S2 \(needs to ship, is accepted\), chatui-accounts \(needs to ship, is reserved\)' "$I" status
+outp 0 "a follow-up marker reserves its slug" 'omega +promised at intent/2026-01-01-alpha/intent.md:10' "$I" status
+outp 0 "a policy skill's marker reserves too" 'dify-gateway +promised at \.claude/skills/api-security/SKILL\.md' "$I" status
+outp 0 "a dependency on nothing is reserved, with who waits" 'chatui-accounts +named at .*waited on by g-three' "$I" status
+outn 0 "a non-policy skill's marker reserves nothing" 'helper-thing' "$I" status
+outn 0 "status <slug> shows only that intent" '2026-01-01-alpha' "$I" status g-three
+outp 2 "status of an unknown slug" 'no intent or story' "$I" status nope
+mkintent 2026-01-08-eta accepted "- **Supersedes:** \`intent/2026-01-07-epsilon\` (never merged). Folded in below.\n"
+git add -A && git commit -qm "docs(intent): eta"
+outp 0 "a draft folded into a merged intent shows as superseded" '2026-01-07-epsilon +superseded +by eta, and its branch origin/docs/intent-epsilon still exists' "$I" status --base main
+git reset -q --hard origin/main
+
+echo "== intents deps"
+outp 0 "within an intent, a story waits only for the other's spec" 'met +S1: needs its spec merged; it.s building' "$I" deps g-two
+outp 1 "unmet dependencies exit 1" 'UNMET +chatui-accounts: needs to ship; it.s reserved' "$I" deps g-three
+outp 2 "an intent with stories asks for a story" 'name one: S1 g-one' "$I" deps gamma
+outp 2 "an unknown slug" 'no intent or story' "$I" deps nope
+outp 0 "a merged pull request is met" 'met +#10' env PATH="$SP/gh-merged:$PATH" "$I" deps beta
+outp 1 "an open pull request isn't" 'UNMET +#10.*open' env PATH="$SP/gh-open:$PATH" "$I" deps beta
+outp 0 "a folder path works as a slug" '2026-01-02-beta' env PATH="$SP/gh-merged:$PATH" "$I" deps intent/2026-01-02-beta
+
+echo "== intents check: relations and layout"
+outp 0 "a clean repo" 'no problems found' "$I" check
+mkintent 2026-01-08-eta accepted "- **Supersedes:** delta\n"
+outp 1 "Supersedes without flipping the old Status" 'Status of intent/2026-01-04-delta/intent.md to .superseded.' "$I" check
+subst intent/2026-01-04-delta/intent.md "Status:** deferred" "Status:** ~~deferred~~ superseded"
+outp 0 "Supersedes with the old Status flipped" 'no problems found' "$I" check
+ireset
+mkintent 2026-01-08-eta accepted "- **Supersedes:** \`intent/2026-01-07-epsilon\` (PR #9, never merged). Its points are folded in.\n"
+outp 0 "superseding a draft, with a note, is allowed" 'no problems found' "$I" check
+ireset
+subst intent/2026-01-04-delta/intent.md "Status:** deferred" "Status:** superseded"
+outp 0 "superseded with no successor is only a warning" 'warning: .*no intent says .Supersedes: delta.' "$I" check
+ireset
+subst intent/2026-01-03-gamma/intent.md "the backend. Outcomes: 1." "the backend. After: S2."
+outp 1 "a cycle between stories" 'dependency cycle: g-one → g-two → g-one' "$I" check
+ireset
+subst intent/2026-01-02-beta/intent.md "Depends on:** #10" "Depends on:** zeta"
+subst intent/2026-01-06-zeta/intent.md "Status:** accepted" "Status:** accepted
+- **Depends on:** beta"
+outp 1 "a cycle between intents" 'dependency cycle: beta → zeta → beta' "$I" check
+ireset
+mkintent 2026-01-09-alpha accepted
+outp 1 "two intents with one slug" "the slug 'alpha' is also used by" "$I" check
+ireset
+subst intent/2026-01-03-gamma/intent.md "S2 g-two" "S2 beta"
+outp 1 "a story slug that's an intent's slug" "the slug 'beta' is also used by" "$I" check
+ireset
+mkintent 2026-01-09-epsilon accepted
+outp 1 "a slug a draft on another branch already uses" "also used by origin/docs/intent-epsilon:" "$I" check
+ireset
+subst intent/2026-01-02-beta/intent.md "#10" "a backend intent nobody has written yet"
+outp 0 "Depends on written as a sentence is only a warning" 'warning: .*Depends on is written as a sentence' "$I" check
+ireset
+subst intent/2026-01-02-beta/intent.md "#10" "alpha, the backend work"
+outp 1 "a ref list with an unreadable item" "can't read 'the backend work'" "$I" check
+ireset
+subst intent/2026-01-02-beta/intent.md "#10" "alpha,
+  the backend work"
+outp 1 "a value wrapped onto the next line is read whole" "can't read 'the backend work'" "$I" check
+ireset
+subst intent/2026-01-02-beta/intent.md "#10" "\`intent/2026-01-01-alpha\` (merged). The rest is a note."
+outp 0 "a ref followed by a note" 'no problems found' "$I" check
+ireset
+subst intent/2026-01-02-beta/intent.md "#10" "S2"
+outp 1 "Depends on naming a story id" "can't name a story id" "$I" check
+ireset
+subst intent/2026-01-03-gamma/intent.md "After: S1." "After: S9."
+outp 1 "After naming a story that isn't there" 'has no story S9' "$I" check
+ireset
+subst intent/2026-01-06-zeta/intent.md "Status:** accepted" "Status:** done"
+outp 1 "an unknown Status" "unknown Status 'done'" "$I" check
+ireset
+subst intent/2026-01-06-zeta/intent.md "Status:** accepted" "Status:** draft | accepted"
+outp 1 "the template's Status left in" 'lists several values' "$I" check
+ireset
+echo s > intent/2026-01-03-gamma/spec.md
+outp 1 "a spec at the top of an intent with stories" 'belongs in <story-slug>/spec.md' "$I" check
+ireset
+mkdir -p intent/2026-01-03-gamma/g-nine && echo s > intent/2026-01-03-gamma/g-nine/spec.md
+outp 1 "a spec folder that isn't a story" "'g-nine' isn't a story" "$I" check
+ireset
+printf -- '- **Later.** → follow-up: TBD\n' >> intent/2026-01-02-beta/intent.md
+outp 1 "a follow-up marker without a slug" 'follow-up marker needs a slug' "$I" check
+ireset
+subst intent/2026-01-03-gamma/intent.md "chatui-accounts" "alphaa"
+outp 0 "a ref one typo away from a slug" "Did you mean 'alpha'" "$I" check
+ireset
+for n in 5 6 7; do printf -- '- **S%s g-x%s**: more.\n' "$n" "$n" >> intent/2026-01-03-gamma/intent.md; done
+outp 0 "more than five stories is a warning" 'warning: .*6 stories' "$I" check
+ireset
+
+echo "== intents check: prose that promises later work"
+printf -- '\n- **Purging.** Purging old data is a follow-up intent.\n' >> intent/2026-01-02-beta/intent.md
+outp 0 "prose without a marker warns, never fails" 'warning: intent/2026-01-02-beta/intent.md:13: .follow-up intent. promises later work' "$I" check
+outp 0 "check <file> reports that file" 'beta/intent.md:13' "$I" check intent/2026-01-02-beta/intent.md
+outn 0 "check <file> skips other files" 'beta/intent.md' "$I" check intent/2026-01-01-alpha/intent.md
+ireset
+printf -- '\n- **Purging.** Purging old data is a follow-up intent. → follow-up: purge\n' >> intent/2026-01-02-beta/intent.md
+outn 0 "prose with a marker in the same item" 'warning' "$I" check
+ireset
+printf -- '\n- ~~**Purging.** Purging old data is a follow-up intent.~~ (Amended: dropped.)\n' >> intent/2026-01-02-beta/intent.md
+outn 0 "struck-through prose" 'warning' "$I" check
+ireset
+printf -- '\nWrite `a separate intent` for it.\n' >> intent/2026-01-02-beta/intent.md
+outn 0 "prose inside code" 'warning' "$I" check
+ireset
+
+echo "== intents hook (PostToolUse)"
+B=intent/2026-01-02-beta/intent.md
+outn 0 "a file outside intent/ is ignored" . ih "$(iedit README.md 'a separate intent')"
+printf -- '\n- **Purging.** Purging old data is a follow-up intent.\n' >> $B
+outp 0 "an edit that adds prose adds context" 'additionalContext.*follow-up intent' ih "$(iedit $B '- **Purging.** Purging old data is a follow-up intent.')"
+outn 0 "an edit elsewhere doesn't repeat old warnings" . ih "$(iedit $B '## Problem')"
+outp 0 "a Write checks the whole file" 'additionalContext' ih "$(iwrite $B)"
+ireset
+subst $B "#10" "S2"
+outp 2 "an edit that leaves an error goes to Claude" "can't name a story id" ih "$(iedit $B 'S2')"
+ireset
+outn 0 "a skill that isn't a policy is ignored" . ih "$(iwrite .claude/skills/helper/SKILL.md)"
+printf -- '\nThe gateway is tracked as a separate intent.\n' >> .claude/skills/api-security/SKILL.md
+outp 0 "a policy skill is checked" 'additionalContext.*separate intent' ih "$(iedit .claude/skills/api-security/SKILL.md 'The gateway is tracked as a separate intent.')"
+ireset
+subst $B "#10" "S2"
+CLAUDE_PROJECT_DIR=/nonexistent hook 2 "the repo comes from the file, not CLAUDE_PROJECT_DIR" "$IH" "$(iedit $B 'S2')"
+ireset
+cd "$SP" || exit 1
 
 echo "== $pass passed, $fail failed"
 [[ $fail -eq 0 ]]
