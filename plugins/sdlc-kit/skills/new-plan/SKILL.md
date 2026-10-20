@@ -82,6 +82,12 @@ Answer these in the plan itself, not in chat:
 - What happens to existing users and data at each step if we stop halfway?
 - Which acceptance criterion is hardest to test offline, and how does the plan cover it?
 
+**Check the size before presenting.** A story's plan is usually 2–5 steps; around ten is the most the
+kit has shipped as one piece. If this plan needs much more than five, it's probably two stories. Say
+so, and propose the split as an intent amendment (`/sdlc-kit:review-intent`) instead of presenting a
+long plan. An intent without stories gets the same check: a long plan there is the sign it needs
+stories. A small story can be a single step.
+
 **End the plan with this section, so approving it isn't mistaken for approving the build.** The
 approval button normally means "start implementing", and here it does not:
 
