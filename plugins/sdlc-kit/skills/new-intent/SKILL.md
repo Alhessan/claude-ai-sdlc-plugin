@@ -14,13 +14,34 @@ This is **Stage 1 only**. Do not write `spec.md` or `plan.md`, do not change any
 design the implementation beyond what's needed to state constraints.
 
 ## 1. Load context
-Read `CLAUDE.md`, `intent/README.md`, `intent/_TEMPLATE.md`, and the most recent
-`intent/*/intent.md` as an example of format and level of evidence. If `intent/` doesn't exist,
-suggest running `/sdlc-kit:init` first.
+Read `CLAUDE.md`, `intent/README.md` and `intent/_TEMPLATE.md`. If `intent/` doesn't exist, suggest
+running `/sdlc-kit:init` first. Don't read other intents as examples: their constraints, decisions
+and scope leak into the new one.
+
+Run `intents status` (on your PATH while this plugin is enabled). It lists every intent with its
+stage, including drafts that exist only on other people's `docs/intent-*` branches, and **reserved
+slugs**: work other intents promised as a follow-up but nobody has written.
+- **If the idea is a reserved slug's work,** use that slug for the folder, so the promise resolves to
+  this intent, and say where it was promised.
+- **If an existing intent or draft overlaps the idea,** raise it before interviewing. This one may
+  supersede it, depend on it, or belong inside it.
+
+Read another intent only when it's related: it promised this work, it overlaps, or this one depends
+on it. Read it for what relates, not as a model to copy.
 
 ## 2. Screen the request
 If it's a small fix (typo, one-line bug, dependency bump, doc tweak), say so and suggest a direct
 PR instead. Those skip the intent process. Stop unless the user insists.
+
+If it's too big to ship in one piece, propose splitting it, and say why:
+- **A dependency or sign-off blocks only part of it.** Split along that line.
+- **Part of it would be useful on its own,** to different users.
+- **It's really two problems,** with separate evidence and users, either of which someone could want
+  without the other. Those are two intents, linked by **Depends on**, not stories.
+
+Otherwise, one intent with 2–4 **stories** (see the template's Stories section). Each story must be
+safe to ship alone: a slice that leaves the default branch broken until the next one lands isn't a
+story. Most intents need no stories at all.
 
 ## 3. Interview
 Ask 3–5 questions at a time until the idea is concrete:
@@ -44,10 +65,19 @@ Write `intent/<YYYY-MM-DD>-<slug>/intent.md` from the template, using today's da
 - Tick only the systems you have evidence the change touches.
 - Put evidence in the Problem section, and mark anything still assumed.
 - Give every open question your proposed answer, so the approver can say "yes" or "no, because…".
+- Write relations so they can be checked: **Depends on** and **Supersedes** name intents or stories
+  by slug, or pull requests as `#N`. Out-of-scope work someone will do later ends with
+  `→ follow-up: <slug>`. A dependency on work nobody has written yet gets a slug too; it's reserved
+  until someone writes it.
+- With stories, number the desired outcomes and fill the Stories section. Delete the template's
+  optional parts that don't apply.
+- A hook runs `intents check` on the file after you write it. Fix any error it reports.
 
 ## 6. Review, then open a PR
 Show the draft and fix it with the user until they're happy. Then:
-1. Branch off the default branch as `docs/intent-<slug>`, and commit only the intent file.
+1. Branch off the default branch as `docs/intent-<slug>`, and commit only the intent file. If it
+   supersedes a merged intent, also amend that one's Status to `superseded` in the same commit (see
+   the template's amendment convention).
 2. Open a PR titled `docs(intent): <title>`. The body summarizes the problem, key evidence, and the
    decisions needed.
 3. **Never merge it.** Merging the PR is the product-owner approval.

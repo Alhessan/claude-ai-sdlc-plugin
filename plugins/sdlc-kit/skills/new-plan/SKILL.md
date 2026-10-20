@@ -1,15 +1,17 @@
 ---
 name: new-plan
 description: Turn an approved intent (and its spec) into plan.md, the Stage 3 implementation plan of the AI-native SDLC, written in plan mode. Use when someone asks to plan, break down, or prepare the implementation of an intent whose spec is merged (or that /sdlc-kit:new-spec said needs no spec). Do NOT use for ideas (/sdlc-kit:new-intent), designs (/sdlc-kit:new-spec), or small fixes that go straight to a PR.
-argument-hint: <intent folder>
+argument-hint: "<work folder: an intent folder, or a story's folder inside one>"
 ---
 
 # /sdlc-kit:new-plan: plan the build of an approved intent as `plan.md`
 
-Intent folder: **$ARGUMENTS**
+Work folder: **$ARGUMENTS**
 
-If that's empty, list the `intent/*/` folders that have an accepted `intent.md`, a merged `spec.md`
-(or a recorded "no spec needed"), and no `plan.md`, then ask which one.
+The **work folder** is the intent's folder, or, for an intent with stories, the story's folder inside
+it (`intent/<date>-<slug>/<story-slug>/`). Its spec is there, and the plan goes there. `<slug>` is its
+name without the date. If the argument is empty, run `intents status` and list the intents and
+stories at `specced` (or `accepted` with a recorded "no spec needed"), then ask which one.
 
 This is **Stage 3 only**. Write no code and change no tests. The output is a plan a new team member
 could build from without asking questions.
@@ -17,10 +19,13 @@ could build from without asking questions.
 ## 1. Gate
 Stop and say why if any of these fail:
 - `intent.md` is on the default branch with `Status: accepted`.
-- `spec.md` is on the default branch, **or** the intent records that no spec is needed. In that case,
-  the intent's Decisions section takes the spec's place.
-- **Dependencies are met.** Check the intent's Constraints (e.g. "depends on PR #10") against reality,
-  using `gh pr view` or `git log`.
+- For a story: it's in the intent's Stories list and not struck through.
+- `<work folder>/spec.md` is on the default branch, **or** the intent records that no spec is needed.
+  In that case, the intent's Decisions section takes the spec's place.
+- **Dependencies are met:** `intents deps <work folder>` exits 0. It checks the intent's
+  **Depends on** and the story's `After:`, pull requests included. If the Constraints still describe a
+  dependency in prose, check that against reality too (`gh pr view`, `git log`), and suggest writing
+  it as a **Depends on** entry.
 - If `plan.md` already exists, switch to **update mode**: change only what the user asks, and keep the
   rest.
 
@@ -29,8 +34,9 @@ Call `EnterPlanMode` before exploring. Stay read-only until the plan is approved
 
 ## 3. Load context
 - `CLAUDE.md`, plus the `CLAUDE.md` / `README.md` of every project the plan touches.
-- `intent.md` and `spec.md`, including every amendment, decision, conflict resolution, and sign-off
-  the spec carries to the implementation PR.
+- `intent.md` and `<work folder>/spec.md`, including every amendment, decision, conflict resolution,
+  and sign-off the spec carries to the implementation PR. For a story, also the specs of the stories
+  it comes `After:`, since it builds on their contracts.
 - Every policy skill (description starting `Policy -`) that applies.
 
 ## 4. Check the spec against today's code
@@ -76,14 +82,20 @@ Answer these in the plan itself, not in chat:
 - What happens to existing users and data at each step if we stop halfway?
 - Which acceptance criterion is hardest to test offline, and how does the plan cover it?
 
+**Check the size before presenting.** A story's plan is usually 2–5 steps; around ten is the most the
+kit has shipped as one piece. If this plan needs much more than five, it's probably two stories. Say
+so, and propose the split as an intent amendment (`/sdlc-kit:review-intent`) instead of presenting a
+long plan. An intent without stories gets the same check: a long plan there is the sign it needs
+stories. A small story can be a single step.
+
 **End the plan with this section, so approving it isn't mistaken for approving the build.** The
 approval button normally means "start implementing", and here it does not:
 
 ```markdown
 ## What approving this does
-Writes this plan to `<intent folder>/plan.md`, commits it on `docs/plan-<slug>`, and opens a PR.
+Writes this plan to `<work folder>/plan.md`, commits it on `docs/plan-<slug>`, and opens a PR.
 **No code is written and no tests change.** The build starts later, with
-`/sdlc-kit:build <intent folder> <step>`, and only after a human merges that PR.
+`/sdlc-kit:build <work folder> <step>`, and only after a human merges that PR.
 ```
 
 Then call `ExitPlanMode`. If the user asks for changes, revise and ask for approval again.
@@ -94,7 +106,7 @@ build gate checks for.
 
 ## 7. After approval, commit the plan
 1. Branch off the default branch as `docs/plan-<slug>`.
-2. Write the approved plan to `<intent folder>/plan.md`, and commit only that file.
+2. Write the approved plan to `<work folder>/plan.md`, and commit only that file.
 3. Open a PR titled `docs(plan): <title>`. The body lists the steps, the risks, and any spec
    deviations or gaps that need a decision.
 4. **Never merge it.** Merging approves the build. The next step is `/sdlc-kit:build`.

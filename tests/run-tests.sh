@@ -308,6 +308,7 @@ outp 2 "an unknown slug" 'no intent or story' "$I" deps nope
 outp 0 "a merged pull request is met" 'met +#10' env PATH="$SP/gh-merged:$PATH" "$I" deps beta
 outp 1 "an open pull request isn't" 'UNMET +#10.*open' env PATH="$SP/gh-open:$PATH" "$I" deps beta
 outp 0 "a folder path works as a slug" '2026-01-02-beta' env PATH="$SP/gh-merged:$PATH" "$I" deps intent/2026-01-02-beta
+outp 0 "a story's folder path works as its slug" 'S2 g-two of 2026-01-03-gamma' "$I" deps intent/2026-01-03-gamma/g-two/
 
 echo "== intents check: relations and layout"
 outp 0 "a clean repo" 'no problems found' "$I" check

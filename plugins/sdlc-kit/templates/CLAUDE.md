@@ -25,7 +25,9 @@ Run commands from inside each project's directory.
   `intent/README.md`):
   `/sdlc-kit:new-intent <idea>`, then `/sdlc-kit:review-intent <folder>`, then `/sdlc-kit:new-spec
   <folder>`, then `/sdlc-kit:new-plan <folder>`, then `/sdlc-kit:build <folder> <step>`, then
-  `/sdlc-kit:build <folder> finish`.
+  `/sdlc-kit:build <folder> finish`. An intent with stories gives each story its own folder, and
+  each one goes through spec, plan and build on its own. `intents status` shows where everything
+  stands.
 - The build is test-first. Tests are locked by a hook. Never edit a locked test; only a human
   unlocks.
 - Policy skills (`<names>`) apply to every spec, plan, and change in their area.

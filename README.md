@@ -6,10 +6,14 @@ at every stage. A human approves between stages by merging a PR. Rules that must
 hooks, not just requested in prompts.
 
 ```
-idea ─► intent.md ──────► spec.md ─► plan.md ─► test-first build ─► verified PR ─► gated deploy
-       /new-intent        /new-spec  /new-plan   /build (per step)   /build finish   /deploy
-       /review-intent
+idea ─► intent.md ──────► spec.md ─────► plan.md ────► test-first build ─► verified PR ───► gated deploy
+        (1+ stories)      (per story)    (per spec)    (per step)          (per story)
+        /new-intent       /new-spec      /new-plan     /build              /build finish    /deploy
+        /review-intent
 ```
+
+An intent with no `## Stories` section is a single story, and its spec and plan sit in the intent's
+folder. A larger intent lists 2–4 stories, and each one gets its own spec, plan, build and PR.
 
 ## What's inside
 
@@ -49,15 +53,73 @@ A skill can only *ask* Claude not to weaken tests. The lock *enforces* it:
   ```
 
 ## Intents, stories and relations
-An intent can list stories that are specced, planned and built on their own, and intents can depend
-on, supersede and promise each other. Written as prose, those relations get lost, so `intents` reads
-a few fixed forms instead (`lib/intents.py` has the full grammar):
-- **Header fields** in intent.md: `Depends on: <slug>, #N` and `Supersedes: <slug>`. A note can
-  follow in parentheses or after a full stop.
-- **A `## Stories` section:** `- **S1 <story-slug>**: what ships. Outcomes: 1. After: S2.` Waiting on
-  a story of the same intent means its spec merged; add ` ships` to wait for it to ship.
-- **A follow-up marker,** `→ follow-up: <slug>`, anywhere in an intent folder or a policy skill. It
-  reserves the slug until an intent or story uses it.
+An intent can be split into stories that are specced, planned and built on their own. Intents can
+also depend on, replace, and promise each other. Written as prose ("this is a separate intent"),
+those relations get lost, because nothing reads them. So `intents` reads three fixed forms, all in
+plain markdown. Everything is identified by a **slug**: an intent folder's name without its date
+(`intent/2026-09-13-guest-chat/` is `guest-chat`), or a story's own slug.
+
+### Stories
+A larger intent lists its stories in a `## Stories` section of `intent.md`, one line each:
+
+```markdown
+## Stories
+- **S1 guest-token**: guests get a token accepted on the chat route. Outcomes: 1.
+- **S2 chat-ui**: the chat page gets, renews and sends the token. Outcomes: 2, 3. After: S1.
+- **S3 usage-dashboard**: admins see guest usage. Outcomes: 4. After: S1 ships.
+```
+
+- **`S1`** is the story's number inside this intent, and **`guest-token`** is its slug. The slug must
+  be unique across `intent/`, because the story's folder, branches and commits are named after it.
+  Its spec and plan live in `intent/2026-09-13-guest-chat/guest-token/`.
+- **`Outcomes: 1`** says which of the intent's numbered *Desired outcome* items the story delivers.
+- **`After:`** says what the story has to wait for. There are two kinds of wait:
+  - **`After: S1`** waits for S1's **spec** to merge. S2 only needs S1's design, such as the shape
+    of the token, to write its own spec and plan against. After that, S1 and S2 can be built in
+    parallel.
+  - **`After: S1 ships`** waits for S1's **feature PR** to merge, for when S3 needs S1's working
+    code, not just its design.
+
+  Anything outside this intent (another intent, its story, or a pull request like `#12`) always
+  has to ship.
+- `/sdlc-kit:new-spec` won't start a story until its spec-level waits (`After: S1`) are over.
+  `/sdlc-kit:new-plan` waits for all of them, including `ships`. `intents deps chat-ui` shows what a
+  story is waiting for.
+- **To drop a story,** strike its line through (`- ~~**S3 usage-dashboard**: …~~`). It stops counting.
+
+An intent with no Stories section is a single story, and its spec and plan sit in the intent's folder.
+
+### Dependencies and replacements
+Two optional header lines in `intent.md` relate whole intents:
+
+```markdown
+- **Depends on:** chatui-login, #42 (session isolation)
+- **Supersedes:** admin-feedback (an earlier draft; its agreed points are folded in)
+```
+
+- **`Depends on`** names intents or stories by slug, or pull requests as `#N`. Every story of this
+  intent waits for each one to ship. A note can follow in parentheses or after a full stop.
+- **`Supersedes`** names the intent this one replaces. If that intent was merged, its Status becomes
+  `superseded` in the same PR, and `intents check` reports it if not. If it's a draft that never
+  merged, close its PR; `intents status` shows it as superseded.
+
+### Follow-ups
+When an intent leaves work for later, give that work a slug instead of only describing it:
+
+```markdown
+## Out of scope
+- Deleting old guest conversations. → follow-up: guest-chat-retention
+```
+
+That **reserves** `guest-chat-retention`:
+- `intents status` lists it under *Reserved*, with the file and line that promised it, until an
+  intent or story with that slug exists.
+- When someone starts that work, `/sdlc-kit:new-intent` sees the reservation and gives the new intent
+  that slug, so the promise is kept by name.
+- Depending on work nobody has written yet reserves its slug the same way.
+
+The marker works anywhere in an intent folder (intent, spec or plan) and in policy skills. If Claude
+writes "a separate intent" or "a follow-up" with no marker, the hook adds a reminder.
 
 Three commands, on PATH while the plugin is enabled. None of them changes anything:
 - **`intents status [<slug>]`** derives every stage from git and is never declared: draft (including
@@ -65,8 +127,14 @@ Three commands, on PATH while the plugin is enabled. None of them changes anythi
   building and shipped. It also lists reserved slugs and who waits on them.
 - **`intents check [<file>...]`** reports broken relations and layout: a Supersedes whose old intent
   isn't marked superseded, a dependency cycle, a slug used twice, a spec outside its story's folder.
-- **`intents deps <slug>`** exits 1 unless a story's dependencies are met. Pull requests are checked
-  with `gh`.
+- **`intents deps <slug or work folder>`** exits 1 unless a story's dependencies are met. Pull
+  requests are checked with `gh`.
+
+The skills rely on these:
+- `/sdlc-kit:new-intent` and `/sdlc-kit:review-intent` read `status` to find overlaps, drafts on other
+  branches, and reserved work.
+- `/sdlc-kit:new-spec` and `/sdlc-kit:new-plan` gate on `deps`.
+- When an intent's last story finishes, `/sdlc-kit:build finish` runs the intent's own outcome checks.
 
 **A PostToolUse hook runs `check`** on every markdown file Claude writes in an intent folder, and on
 policy skills. Relation errors go back to Claude to fix in the same change. Prose that promises later
@@ -113,7 +181,9 @@ Without `python3`, Python test files fall back to whole-file locks and the inten
 
 ## Conventions the kit relies on
 - `CLAUDE.md` lists each project's check command. The build and the verifier run exactly those.
-- Intent folders are `intent/YYYY-MM-DD-<slug>/`, and each file is approved by merging its PR.
+- Intent folders are `intent/YYYY-MM-DD-<slug>/`, and each file is approved by merging its PR. An
+  intent with stories gives each story a folder inside it. Every stage after the intent takes that
+  **work folder** (the intent's, or the story's), and its name without a date is the `<slug>`.
 - Commits: `test(<slug>): step N: …` for tests, `feat(<slug>): step N: …` for code, and
   `docs(plan): …` for plan updates. `/sdlc-kit:build` finds progress through these.
 - **Policy skills** are project skills whose description starts with `Policy -`.

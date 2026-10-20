@@ -155,8 +155,9 @@ def plain(s):
 
 
 def normalize(tok):
-    """A folder name or path reduced to its intent's slug; anything else comes back unchanged."""
-    tok = tok.strip().strip("/").removeprefix("intent/").removesuffix("/intent.md")
+    """A work folder's name or path (an intent folder, or a story's folder inside one) reduced to its
+    slug; anything else comes back unchanged."""
+    tok = tok.strip().strip("/").removeprefix("intent/").removesuffix("/intent.md").rsplit("/", 1)[-1]
     m = DATED.fullmatch(tok)
     return m.group(1) if m else tok
 
