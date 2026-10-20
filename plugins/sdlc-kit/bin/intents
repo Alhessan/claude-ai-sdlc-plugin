@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Intents, stories and their relations: `intents status | check | deps`. lib/intents.py documents
+# the commands and the intent.md grammar they read. Needs python3 (3.9+).
+set -euo pipefail
+
+command -v python3 >/dev/null 2>&1 || { echo "intents needs python3 (3.9 or later)" >&2; exit 2; }
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+exec python3 "$here/../lib/intents.py" "$@"
