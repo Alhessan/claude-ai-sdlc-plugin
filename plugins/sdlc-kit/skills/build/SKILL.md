@@ -158,7 +158,8 @@ step touches a database and the plan names integration tests, run them against a
 4. **If this is the intent's last story** (`intents status <slug>` shows every other story shipped or
    dropped), this PR completes the intent: also run the checks the intent's Desired outcome gives for
    how we'll know it worked, and record what you observed. Without stories, step 3 already covers them.
-5. Push `feat/<slug>` (`git push -u origin feat/<slug>`) and open a PR titled `feat: <intent title>`,
+5. Push `feat/<slug>` (`git push -u origin feat/<slug>`) and open a PR against the default branch
+   (`gh pr create --base <branch>`) titled `feat: <intent title>`,
    with the story appended for a story (`feat: <intent title>: S2 <story-slug>`).
    Pass the body with `--body-file` (a file), not inline. Its body contains:
    - links to `intent.md`, `spec.md`, and `plan.md`, and for a story, its line from the intent;

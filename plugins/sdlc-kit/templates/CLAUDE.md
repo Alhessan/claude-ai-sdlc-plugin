@@ -31,7 +31,9 @@ Run commands from inside each project's directory.
 - The build is test-first. Tests are locked by a hook. Never edit a locked test; only a human
   unlocks.
 - Policy skills (`<names>`) apply to every spec, plan, and change in their area.
-- Branch off `<default branch>`; one concern per PR. Deploys follow `docs/deployment.md`
+- **The default branch is `<branch>`.** Wherever the `/sdlc-kit:*` skills say "the default branch",
+  they mean this one: branch off it, open PRs against it, and gate on what's merged to it. One
+  concern per PR. Deploys follow `docs/deployment.md`
   (`/sdlc-kit:deploy`).
 
 ## Verifying your work

@@ -109,7 +109,7 @@ build gate checks for.
 ## 7. After approval, commit the plan
 1. Branch off the default branch as `docs/plan-<slug>`.
 2. Write the approved plan to `<work folder>/plan.md`, and commit only that file.
-3. Open a PR titled `docs(plan): <title>`. The body lists the steps, the risks, and any spec
+3. Open a PR against the default branch titled `docs(plan): <title>`. The body lists the steps, the risks, and any spec
    deviations or gaps that need a decision.
 4. **Never merge it.** Merging approves the build. The next step is `/sdlc-kit:build`.
 

@@ -44,7 +44,7 @@ during the build.
 - **Add a Decisions row per change:** what changed, what forced it, who decided, the date.
 - **Adding or dropping a story is an amendment too.** Strike a dropped story's whole line through,
   so it stops counting. Never renumber or reuse a story's id or slug.
-- **Branch `docs/intent-<slug>-amend-<topic>`,** commit the intent alone, and open a PR titled
+- **Branch `docs/intent-<slug>-amend-<topic>`,** commit the intent alone, and open a PR against the default branch titled
   `docs(intent): amend <slug> — <what changed>`. Never merge it.
 - Then work only the questions the amendment reopens. Don't re-interview what's already settled.
 
@@ -120,7 +120,7 @@ and what's still open. Then ask the user which outcome they want. Never pick it 
 ## 7. Commit, after the user confirms
 Show the full diff and **ask before committing**. Once they confirm:
 1. If the intent has an open PR, commit to its branch (`docs/intent-<slug>`) and push. Otherwise
-   branch off the default branch and open one, titled `docs(intent): <title>`.
+   branch off the default branch and open one against it, titled `docs(intent): <title>`.
 2. Message: `docs(intent): record decisions for <slug>`, or `docs(intent): defer <slug> to <YYYY-MM>`.
 3. Update the PR body with the outcome and anything still blocking it.
 4. **Never merge it.** Merging is the product owner's approval, including for `deferred` and
