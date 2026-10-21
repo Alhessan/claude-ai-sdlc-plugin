@@ -52,6 +52,9 @@ during the build.
 The listed open questions are the easy half. Review the whole intent for what it doesn't say:
 - **Assumed claims.** Anything marked *assumed* that a cheap read-only check could settle: run it, and
   mark the claim *verified* with what you ran. Never read real `.env*` files.
+- **Technical detail in the business sections.** File paths, class names or code findings in the
+  Problem or *Where we are today* belong in **Evidence** at the end; move them there and leave a
+  plain-language line with a link. An older intent with no Evidence section is fine as it is.
 - **An untestable outcome.** If "desired outcome" can't become Given/When/Then rows in a spec, it's
   too vague. Say what's missing.
 - **Systems affected.** Ticked with no reason, or unticked though the code says otherwise.

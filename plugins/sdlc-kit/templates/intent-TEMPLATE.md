@@ -9,12 +9,26 @@
 - **Supersedes:** <slug of the intent this replaces; delete if none>
 
 ## Problem
-What is wrong or missing today, and who feels it? Include evidence (user reports, metrics, logs, code
-you read or ran), marking each item **verified** or **assumed**.
+What is wrong or missing today, and who feels it? Write it for the product owner, in a paragraph or
+two: business terms, no file paths or class names. The technical findings go in **Evidence** at the
+end.
 
 ## Desired outcome
 What does "done" look like from the user's point of view? How will we know it worked? Number the
 outcomes if the intent has stories, so each story can say which ones it delivers.
+
+## Where we are today
+What the product already does toward the outcome, and what's missing, in the same business terms as
+the Problem. End each line with a link to its group in Evidence.
+
+**Already supported**
+- <what users can do today>. ([evidence](#<evidence-heading>))
+
+**Not supported yet**
+- <what the outcome needs that doesn't exist>. ([evidence](#<evidence-heading>))
+
+**Known risks today** (delete if none)
+- <current behaviour that could undermine the outcome>. ([evidence](#<evidence-heading>))
 
 ## Stories
 Delete this section if the intent ships as one piece, which most do. Otherwise split it into 2–4
@@ -71,3 +85,12 @@ To drop a story, strike its whole line through the same way; a struck-through st
 
 A struck-through line that turned out to be wrong is more useful to the next reader than a clean file
 that hides the correction.
+
+## Evidence
+The technical findings behind *Where we are today*: code you read or ran, logs, metrics, user
+reports. Group them under `###` headings, one per area, so the lines above can link to them. Mark
+each item **verified** (you saw or ran it) or **assumed**, and link the code it cites.
+
+### <area>
+- **Verified.** <finding>, in [<file>:<line>](<relative path>).
+- **Assumed.** <finding, and why it isn't checked yet>.
