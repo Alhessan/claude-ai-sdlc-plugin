@@ -67,7 +67,10 @@ whether it's **verified** (you saw or ran it) or **assumed**. Never read real `.
 ## 5. Draft
 Write `intent/<YYYY-MM-DD>-<slug>/intent.md` from the template, using today's date.
 - Tick only the systems you have evidence the change touches.
-- Put evidence in the Problem section, and mark anything still assumed.
+- Write the Problem and *Where we are today* for the product owner: business terms, no file paths or
+  class names. Put the technical findings in **Evidence** at the end, grouped under `###` headings
+  and marked **verified** or **assumed**, and link each *Where we are today* line to its group. Use
+  this layout even if the project's `_TEMPLATE.md` predates it.
 - Give every open question your proposed answer, so the approver can say "yes" or "no, because…".
 - Write relations so they can be checked: **Depends on** and **Supersedes** name intents or stories
   by slug, or pull requests as `#N`. Out-of-scope work someone will do later ends with
