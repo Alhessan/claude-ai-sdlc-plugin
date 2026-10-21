@@ -893,6 +893,10 @@ def main(argv):
         print("intents: not inside a git repository", file=sys.stderr)
         return 2
     repo = Repo(top.strip(), base)
+    if not repo.git("rev-parse", "--verify", "--quiet", repo.base + "^{commit}"):
+        print(f"intents: the default branch {repo.base!r} isn't a commit here. Fix --base or "
+              "$INTENTS_BASE, or run `git fetch` if it's a remote branch.", file=sys.stderr)
+        return 2
     if cmd == "status" and len(args) <= 2:
         return cmd_status(Model(repo, "base"), args[1] if len(args) > 1 else None)
     if cmd == "check":

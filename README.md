@@ -141,6 +141,29 @@ policy skills. Relation errors go back to Claude to fix in the same change. Pros
 work ("a separate intent") with no follow-up marker only adds a note, and only for the text that edit
 wrote: wording heuristics never block.
 
+## The default branch
+Every stage branches off, opens its PR against, and gates on one **default branch**: an intent counts
+as accepted, a spec or plan as merged, and a story as shipped only once it's there. It's usually
+the repo's default branch on GitHub, but it doesn't have to be. A team that merges into `develop`
+can use that instead:
+- **`CLAUDE.md` names it** (`The default branch is develop.`), and the skills and the verifier read
+  it from there. `/sdlc-kit:init` asks for it.
+- **`INTENTS_BASE` tells `intents`.** Without it, `intents` follows `origin/HEAD`, then `origin/main`,
+  `origin/master`, `main` and `master`. When the default branch is anything else, set
+  `INTENTS_BASE` in the `env` block of the checked-in `.claude/settings.json` (`init` does this), so
+  the hooks and Claude's commands use it too:
+  ```json
+  { "env": { "INTENTS_BASE": "origin/develop" } }
+  ```
+  Use the remote branch (`origin/develop`, after a `git fetch`), not a local copy that may be behind.
+  In your own shell or CI, export the same variable or pass `--base origin/develop`. `intents status`
+  prints the branch it read, and a name that doesn't exist is an error, not an empty list.
+- **Deploys ship the same branch.** If production deploys from somewhere else (`develop` is
+  released to `main`, say), write that release step into `docs/deployment.md`.
+
+The default branch is one per repo, not per intent. To build one intent against a release branch,
+point `INTENTS_BASE` and `CLAUDE.md` at it for that work.
+
 ## Install
 There are two ways to install. Both install the plugin for your user, so every project and session
 picks it up.

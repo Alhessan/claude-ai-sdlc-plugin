@@ -9,13 +9,16 @@ disable-model-invocation: true
 
 Templates live in `${CLAUDE_PLUGIN_ROOT}/templates/`. Everything you create is proposed, shown, and
 committed on a branch for review. **Never overwrite an existing file.** Merge into it, show the diff,
-and ask first. `--minimal` skips the optional steps (6–8).
+and ask first. `--minimal` skips the optional steps (6–8), but never §8's default branch.
 
 ## 1. Look before writing
 - Read the repo: `README`, the existing `CLAUDE.md` (if any), build and test config (package.json,
   pyproject, Makefile, etc.), CI config, and which folders are vendored or generated.
 - Find each project's **real** test/check command. Run the cheap ones to confirm they work and to
   record their current result. A command that fails today is recorded as such, not hidden.
+- Find the **default branch**: the branch every PR merges into and every stage gates on. Propose the
+  remote's (`git symbolic-ref --short refs/remotes/origin/HEAD`) and ask whether the team merges
+  somewhere else, such as `develop`. §2 and §8 record the answer.
 - Summarize what you found and what you'll create, then ask the user to confirm.
 
 ## 2. `CLAUDE.md`
@@ -23,6 +26,7 @@ and ask first. `--minimal` skips the optional steps (6–8).
   map, the verified check commands, rules, and known gaps. Keep it to about one page.
 - **If it exists,** add only the missing sections, adapted from the template: Workflow (the
   `/sdlc-kit:*` commands), "Verifying your work", and Known gaps. Show the diff.
+- Either way, the Rules name the default branch from §1 (the template's "The default branch is" line).
 
 ## 3. `intent/`
 Copy `templates/intent-README.md` to `intent/README.md` and `templates/intent-TEMPLATE.md` to
@@ -62,9 +66,17 @@ If the project deploys somewhere, offer to draft `docs/deployment.md` from `temp
 using what's knowable from the repo, and marking everything unverified. Never connect to a server to
 fill it in without asking.
 
-## 8. Team settings (optional)
-Offer to add the marketplace and plugin to the checked-in `.claude/settings.json`, so teammates get the
-kit automatically. Ask for the marketplace repo (default `mustafamg/claude-ai-sdlc-plugin`; a fork works too) and merge, don't overwrite:
+## 8. Team settings
+**The default branch, if it isn't the remote's (required).** `intents`, and the hooks and skills that
+run it, otherwise follow `origin/HEAD`. Merge this into the checked-in `.claude/settings.json`:
+```json
+{ "env": { "INTENTS_BASE": "origin/<branch>" } }
+```
+Use the remote branch, so it reads what's merged rather than a stale local copy. Tell the user that
+running `intents` from their own shell or CI needs the same `INTENTS_BASE` exported, or `--base`.
+
+**The plugin (optional).** Offer to add the marketplace and plugin to the checked-in
+`.claude/settings.json`, so teammates get the kit automatically. Ask for the marketplace repo (default `mustafamg/claude-ai-sdlc-plugin`; a fork works too) and merge, don't overwrite:
 ```json
 {
   "extraKnownMarketplaces": {
@@ -78,6 +90,6 @@ behind the hook.
 
 ## 9. Commit for review
 Branch off the default branch as `chore/adopt-sdlc-kit`, commit the new and changed files, and open a
-PR that lists what was created, the verified check commands and their current results, and any
-decisions left to the team. **Never merge it.** Then suggest starting the first feature with
+PR against it that lists what was created, the verified check commands and their current results,
+and any decisions left to the team. **Never merge it.** Then suggest starting the first feature with
 `/sdlc-kit:new-intent <idea>`.

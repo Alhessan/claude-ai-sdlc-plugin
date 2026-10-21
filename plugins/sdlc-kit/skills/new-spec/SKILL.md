@@ -79,7 +79,7 @@ flagged clearly.
 Go through the draft with the user, starting with conflicts. Then:
 1. Branch off the default branch as `docs/spec-<slug>` (`<slug>` is the work folder's name without its
    date), and commit only `spec.md`.
-2. Open a PR titled `docs(spec): <title>`. The body lists the conflicts and open questions that need a
+2. Open a PR against the default branch titled `docs(spec): <title>`. The body lists the conflicts and open questions that need a
    decision, and tags the policy owners named in the policy skills.
 3. **Never merge it.** Merging means the product owner approves building it. The next step is
    `/sdlc-kit:new-plan <work folder>`.

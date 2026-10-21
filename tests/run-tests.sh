@@ -13,6 +13,7 @@ mkdir -p "$SP/proj/tests/support" "$SP/web" "$SP/vendor/lib" "$SP/.claude"
 cd "$SP" || exit 1
 git init -q && git config user.email t@t && git config user.name t
 export CLAUDE_PROJECT_DIR="$SP"
+unset INTENTS_BASE  # a project's settings may set it; these repos rely on origin/HEAD
 T=proj/tests/test_a.py
 pass=0; fail=0
 
@@ -298,6 +299,12 @@ outp 2 "status of an unknown slug" 'no intent or story' "$I" status nope
 mkintent 2026-01-08-eta accepted "- **Supersedes:** \`intent/2026-01-07-epsilon\` (never merged). Folded in below.\n"
 git add -A && git commit -qm "docs(intent): eta"
 outp 0 "a draft folded into a merged intent shows as superseded" '2026-01-07-epsilon +superseded +by eta, and its branch origin/docs/intent-epsilon still exists' "$I" status --base main
+git branch -q develop "$(git log -1 --format=%H --grep='^docs(intent): intents$')"
+outp 0 "INTENTS_BASE picks the default branch" 'Intents \(develop\)' env INTENTS_BASE=develop "$I" status
+outp 0 "status is read from that branch" '2026-01-02-beta +accepted' env INTENTS_BASE=develop "$I" status
+outp 0 "--base wins over INTENTS_BASE" 'Intents \(main\)' env INTENTS_BASE=develop "$I" status --base main
+outp 2 "a default branch that doesn't exist is refused" "'origin/nope' isn't a commit here" env INTENTS_BASE=origin/nope "$I" status
+git branch -q -D develop
 git reset -q --hard origin/main
 
 echo "== intents deps"

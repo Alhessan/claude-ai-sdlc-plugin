@@ -82,7 +82,7 @@ Show the draft and fix it with the user until they're happy. Then:
 1. Branch off the default branch as `docs/intent-<slug>`, and commit only the intent file. If it
    supersedes a merged intent, also amend that one's Status to `superseded` in the same commit (see
    the template's amendment convention).
-2. Open a PR titled `docs(intent): <title>`. The body summarizes the problem, key evidence, and the
+2. Open a PR against the default branch titled `docs(intent): <title>`. The body summarizes the problem, key evidence, and the
    decisions needed.
 3. **Never merge it.** Merging the PR is the product-owner approval.
 
