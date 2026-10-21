@@ -62,7 +62,24 @@ What we are deliberately *not* doing. When someone will do it later, end the ite
 `→ follow-up: <slug>`, so the slug is reserved and `intents status` lists it until it's written.
 
 ## Open questions
-Each with a proposed answer, so the approver can say "yes" or "no, because…".
+Each with a proposed answer, so the approver can say "yes" or "no, because…". Business questions
+change what users see or what the product does, and need the product owner, so they come first.
+Technical ones can wait for the spec. Number them straight through both groups, and break each
+proposed answer into short items. Delete a group that has no questions.
+
+### Business
+
+1. **<question, in business terms>?**
+   *Proposed:*
+   - <the answer>.
+   - <what it means for users, or who confirms it>.
+
+### Technical
+
+2. **<question>?**
+   *Proposed:*
+   - <the answer>.
+   - <which spec or story settles it>.
 
 ## Decisions
 Filled in by `/sdlc-kit:review-intent`. One row per question: the question, its

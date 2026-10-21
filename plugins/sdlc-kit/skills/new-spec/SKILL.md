@@ -70,7 +70,8 @@ Use these sections:
 6. **Non-goals:** carried from the intent, plus anything decided out during design. Work that
    belongs to another story names that story; work someone will do later ends with
    `→ follow-up: <slug>`.
-7. **Open questions:** each with a proposed answer.
+7. **Open questions:** each with a proposed answer, laid out as in the intent template: business
+   questions first, then technical, numbered straight through, each answer as short items.
 
 A conflict must be resolved by the policy owner or product owner, not by you. Leave it in the spec,
 flagged clearly.
