@@ -72,6 +72,9 @@ Write `intent/<YYYY-MM-DD>-<slug>/intent.md` from the template, using today's da
   and marked **verified** or **assumed**, and link each *Where we are today* line to its group. Use
   this layout even if the project's `_TEMPLATE.md` predates it.
 - Give every open question your proposed answer, so the approver can say "yes" or "no, because…".
+  Split them under `### Business` (what users see or what the product does; the product owner
+  answers) and then `### Technical` (for the spec), numbered straight through. Write each question
+  in bold and its `*Proposed:*` answer as short bullet items, not a paragraph.
 - Write relations so they can be checked: **Depends on** and **Supersedes** name intents or stories
   by slug, or pull requests as `#N`. Out-of-scope work someone will do later ends with
   `→ follow-up: <slug>`. A dependency on work nobody has written yet gets a slug too; it's reserved

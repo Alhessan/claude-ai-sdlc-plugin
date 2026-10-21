@@ -81,11 +81,15 @@ The listed open questions are the easy half. Review the whole intent for what it
   until that work ships. Say so, and ask who will write it.
 
 Add each gap to the list to resolve, with your proposed answer. Report gaps you can't resolve as new
-open questions rather than answering them yourself.
+open questions rather than answering them yourself, under **Business** or **Technical** as the
+template lays them out. If the existing questions mix the two or bury the answer in a paragraph,
+regroup them and break each answer into items; keep their numbers, since the Decisions table and
+other text cite them.
 
 ## 4. Resolve, with the user
 Ask 3–5 questions at a time, each with your recommendation, so the user can say "yes" or "no,
-because…". Keep going until every question has one of these resolutions:
+because…". Ask the business questions first, then the technical ones. Lay each out as in the
+template: the question in bold, then the recommendation as short items. Keep going until every question has one of these resolutions:
 - **Decided** — the answer, in the user's words.
 - **Deferred to spec** — a genuine design question Stage 1 can't settle. Record why. `/sdlc-kit:new-spec`
   must ask it.
