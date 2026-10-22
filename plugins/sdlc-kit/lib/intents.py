@@ -17,12 +17,16 @@ What it reads:
     - **Depends on:** <ref>, <ref>      every story of this intent waits for each one to ship
     - **Supersedes:** <slug>            the old intent's Status must say `superseded`, same change
     A note may follow the refs, in parentheses or after a full stop.
-  An optional `## Stories` section, one list item per story:
+  An optional `## Stories` section, one `###` heading per story, its lines running to the next one:
+    ### S1 <story-slug>: <title>
+    - **After:** S2, other-slug ships
+    or, the older form, one list item per story:
     - **S1 <story-slug>**: what ships. Outcomes: 1, 3. After: S2, other-slug ships.
     `After:` naming a story of the same intent waits for that story's spec to merge, or for it to
     ship when followed by ` ships`. Other intents, their stories and #N always have to ship. A story
-    struck through (`- ~~**S3 slug**: ...~~`) was dropped by amendment. Without a Stories section the
-    intent is a single story, and its spec.md and plan.md sit in the intent folder.
+    whose heading or line is struck through (`### ~~S3 slug: ...~~`, `- ~~**S3 slug**: ...~~`) was
+    dropped by amendment. Without a Stories section the intent is a single story, and its spec.md and
+    plan.md sit in the intent folder.
   A follow-up marker anywhere in intent/<folder>/**.md or a policy skill:
     -> follow-up: <slug>   (or the arrow →). The slug stays reserved until an intent or story uses it.
   A ref is a slug (an intent folder's name without its date, or a story's slug), a story id (S2) of
@@ -58,8 +62,9 @@ HEADER_FIELD = re.compile(r"^\s*[-*]\s+\*\*(?P<key>[^*:]+):\*\*\s*(?P<val>.*)$")
 STORIES_HEADING = re.compile(r"^##\s+stories\s*$", re.I)
 BULLET = re.compile(r"^ {0,3}[-*+]\s+")
 ITEM = re.compile(r"^ {0,3}(?:[-*+]|\d+[.)])\s+")
+STORY_HEADING = re.compile(r"^###\s+(?P<strike>~~)?(?P<sid>S\d+)\s+(?P<slug>[^\s:*~]+)(?P<rest>.*)$")
 STORY = re.compile(r"^ {0,3}[-*+]\s+(?P<strike>~~)?\*\*(?P<sid>S\d+)\s+(?P<slug>[^*\s]+)\*\*(?P<rest>.*)$")
-AFTER = re.compile(r"(?:\*\*|\*|_)?\bAfter:(?:\*\*|\*|_)?\s*(?P<refs>[^.;\n]*)")
+AFTER = re.compile(r"(?:\*\*|\*|_)?\bAfter:(?:\*\*|\*|_)?[ \t]*(?P<refs>[^.;\n]*)")
 MARKER = re.compile(r"(?:→|->)\s*follow-up:\s*(?P<val>.*)", re.I)
 MARKER_REFS = re.compile(r"\s*(" + SLUG + r"(?:\s*,\s*" + SLUG + r")*)")
 STEP_GREP = r"^(\* )?(test|feat)\(([a-z0-9-]+)\): step [0-9]+"
@@ -186,18 +191,31 @@ def parse_intent(folder, where, text):
     if not SLUG_RE.fullmatch(it.slug):
         probs.append(err(where, 1, f"the folder name {folder!r} doesn't give a usable slug: use "
                                    "YYYY-MM-DD-<slug>, with lowercase letters, digits and hyphens"))
-    fields, stories, current, section = [], [], None, "header"
+    fields, stories, current, section, headed = [], [], None, "header", False
     for n, line in enumerate(clean_lines(text), 1):
         if line.startswith("## "):
             section, current = ("stories" if STORIES_HEADING.match(line) else "body"), None
             if section == "stories":
-                it.stories_line = n
+                it.stories_line, headed = n, False
         elif section == "header":
             fm = HEADER_FIELD.match(line)
             if fm:
                 fields.append([fm.group("key").strip(), fm.group("val"), n])
             elif fields and line.strip() and not BULLET.match(line):
                 fields[-1][1] += " " + line.strip()  # a value wrapped onto the next line
+        elif section == "stories" and line.startswith("### "):
+            sm, current, headed = STORY_HEADING.match(line), None, True
+            if not sm:
+                probs.append(err(where, n, "can't read this story's heading: write `### S1 <story-slug>: "
+                                           "<title>`"))
+            else:
+                current = [Unit(sm.group("slug"), it, sm.group("sid"), n, bool(sm.group("strike"))),
+                           sm.group("rest")]
+                if "<" not in sm.group("slug"):  # not an unfilled template heading
+                    stories.append(current)
+        elif section == "stories" and headed:
+            if current:  # every line up to the next heading belongs to the story
+                current[1] += "\n" + line
         elif section == "stories":
             if BULLET.match(line):
                 sm, current = STORY.match(line), None

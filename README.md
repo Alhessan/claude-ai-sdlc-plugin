@@ -60,20 +60,46 @@ plain markdown. Everything is identified by a **slug**: an intent folder's name 
 (`intent/2026-09-13-guest-chat/` is `guest-chat`), or a story's own slug.
 
 ### Stories
-A larger intent lists its stories in a `## Stories` section of `intent.md`, one line each:
+A larger intent lists its stories in a `## Stories` section of `intent.md`. Each story gets a `###`
+heading with a title, and is written for the product owner, from the user's side, in short bullets:
 
 ```markdown
 ## Stories
-- **S1 guest-token**: guests get a token accepted on the chat route. Outcomes: 1.
-- **S2 chat-ui**: the chat page gets, renews and sends the token. Outcomes: 2, 3. After: S1.
-- **S3 usage-dashboard**: admins see guest usage. Outcomes: 4. After: S1 ships.
+
+### S1 guest-token: Chat without signing up
+Visitors get a guest pass that lets them chat before they create an account.
+
+- **Outcomes:** 1
+- **Actors:** visitors who haven't signed up
+- **User story:** As a visitor, I want to ask a question straight away, so I can see if the product
+  helps before I sign up.
+
+**What users get**
+- A chat that opens without a sign-up form.
+- The same limits and safety checks as signed-in users.
+
+**Acceptance criteria**
+- A visitor can send a message and get an answer without signing up.
+- A visitor who reaches the guest limit is asked to sign up, and keeps the conversation.
+
+### S2 chat-ui: Keep the guest conversation across visits
+- **Outcomes:** 2, 3
+- **After:** S1
+…
+
+### S3 usage-dashboard: See how guests use the chat
+- **Outcomes:** 4
+- **After:** S1 ships
+…
 ```
 
 - **`S1`** is the story's number inside this intent, and **`guest-token`** is its slug. The slug must
   be unique across `intent/`, because the story's folder, branches and commits are named after it.
   Its spec and plan live in `intent/2026-09-13-guest-chat/guest-token/`.
-- **`Outcomes: 1`** says which of the intent's numbered *Desired outcome* items the story delivers.
-- **`After:`** says what the story has to wait for. There are two kinds of wait:
+- **Outcomes** says which of the intent's numbered *Desired outcome* items the story delivers.
+- **Acceptance criteria** are plain checks a user could make once the story ships. The story's spec
+  turns each one into Given / When / Then rows.
+- **After** says what the story has to wait for. There are two kinds of wait:
   - **`After: S1`** waits for S1's **spec** to merge. S2 only needs S1's design, such as the shape
     of the token, to write its own spec and plan against. After that, S1 and S2 can be built in
     parallel.
@@ -85,7 +111,9 @@ A larger intent lists its stories in a `## Stories` section of `intent.md`, one 
 - `/sdlc-kit:new-spec` won't start a story until its spec-level waits (`After: S1`) are over.
   `/sdlc-kit:new-plan` waits for all of them, including `ships`. `intents deps chat-ui` shows what a
   story is waiting for.
-- **To drop a story,** strike its line through (`- ~~**S3 usage-dashboard**: …~~`). It stops counting.
+- **To drop a story,** strike its heading through (`### ~~S3 usage-dashboard: …~~`). It stops counting.
+- The older one-line form, `- **S1 guest-token**: what ships. Outcomes: 1. After: S2.`, is still
+  read, so existing intents don't need rewriting.
 
 An intent with no Stories section is a single story, and its spec and plan sit in the intent's folder.
 

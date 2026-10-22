@@ -251,6 +251,38 @@ Each story ships on its own.
 - ~~**S4 g-four**: exports. After: S1.~~ (Dropped 2026-01-04: not needed.)
 EOF
 mkintent 2026-01-04-delta deferred "- **Revisit:** 2026-06 (t)\n"
+mkintent 2026-01-05-theta accepted
+cat >> intent/2026-01-05-theta/intent.md <<'EOF'
+
+## Stories
+Each story ships on its own. `After: S1` waits for S1's spec.
+
+### S1 <story-slug>: <title>
+- **After:** <S1, S1 ships, or a slug; delete if none>
+
+### S1 t-one: Build rules visually
+Analysts build a rule in a visual builder.
+
+- **Outcomes:** 1
+- **Actors:** analysts
+
+**What users get**
+- A builder.
+  - Nested under it.
+
+**Acceptance criteria**
+- An analyst can save a rule.
+
+### S2 t-two: Chain conditions with AND, OR and NOT
+- **Outcomes:** 2
+- **After:** S1 ships
+
+**Acceptance criteria**
+- A rule with three conditions joined by AND fires only when all three hold.
+
+### ~~S3 t-three: Export rules~~ (Dropped 2026-01-05: not needed.)
+- **After:** S9
+EOF
 mkintent 2026-01-06-zeta accepted
 mkdir -p .claude/skills/api-security .claude/skills/helper
 printf -- '---\nname: api-security\ndescription: Policy - API rules.\n---\n\n- The dashboard calls Dify directly. → follow-up: dify-gateway\n' > .claude/skills/api-security/SKILL.md
@@ -286,6 +318,9 @@ outp 0 "specced is dated by the merge, not the branch commit" '2026-01-02-beta +
 outp 0 "step commits on an unmerged branch mean building" 'S1 g-one +building' "$I" status
 outp 0 "a story with nothing merged is accepted" 'S2 g-two +accepted' "$I" status
 outp 0 "a struck-through story is dropped" 'S4 g-four +dropped' "$I" status
+outp 0 "a story under its own heading is read" 'S1 t-one +accepted' "$I" status
+outp 0 "a struck-through story heading is dropped" 'S3 t-three +dropped' "$I" status
+outp 0 "After under a story heading is read" 'S2 t-two .*waiting on S1 \(needs to ship, is accepted\)' "$I" status
 outp 0 "an intent with stories rolls up" '2026-01-03-gamma +in progress +0 of 3 stories shipped' "$I" status
 outp 0 "deferred shows its revisit month" '2026-01-04-delta +deferred .*revisit 2026-06' "$I" status
 outp 0 "a draft only on origin's docs/intent-* branch is listed" '2026-01-07-epsilon +draft +on origin/docs/intent-epsilon' "$I" status
@@ -316,6 +351,7 @@ outp 0 "a merged pull request is met" 'met +#10' env PATH="$SP/gh-merged:$PATH" 
 outp 1 "an open pull request isn't" 'UNMET +#10.*open' env PATH="$SP/gh-open:$PATH" "$I" deps beta
 outp 0 "a folder path works as a slug" '2026-01-02-beta' env PATH="$SP/gh-merged:$PATH" "$I" deps intent/2026-01-02-beta
 outp 0 "a story's folder path works as its slug" 'S2 g-two of 2026-01-03-gamma' "$I" deps intent/2026-01-03-gamma/g-two/
+outp 1 "a story under a heading waits for its After" 'UNMET +S1: needs to ship' "$I" deps t-two
 
 echo "== intents check: relations and layout"
 outp 0 "a clean repo" 'no problems found' "$I" check
@@ -365,6 +401,12 @@ outp 1 "Depends on naming a story id" "can't name a story id" "$I" check
 ireset
 subst intent/2026-01-03-gamma/intent.md "After: S1." "After: S9."
 outp 1 "After naming a story that isn't there" 'has no story S9' "$I" check
+ireset
+subst intent/2026-01-05-theta/intent.md "**After:** S1 ships" "**After:** S9"
+outp 1 "After under a story heading naming a story that isn't there" 'has no story S9' "$I" check
+ireset
+subst intent/2026-01-05-theta/intent.md "### S2 t-two" "### Notes on t-two"
+outp 1 "a heading in Stories that isn't a story" "can't read this story's heading" "$I" check
 ireset
 subst intent/2026-01-06-zeta/intent.md "Status:** accepted" "Status:** done"
 outp 1 "an unknown Status" "unknown Status 'done'" "$I" check

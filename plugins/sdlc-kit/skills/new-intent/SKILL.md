@@ -79,8 +79,11 @@ Write `intent/<YYYY-MM-DD>-<slug>/intent.md` from the template, using today's da
   by slug, or pull requests as `#N`. Out-of-scope work someone will do later ends with
   `→ follow-up: <slug>`. A dependency on work nobody has written yet gets a slug too; it's reserved
   until someone writes it.
-- With stories, number the desired outcomes and fill the Stories section. Delete the template's
-  optional parts that don't apply.
+- With stories, number the desired outcomes and give each story the template's block: a `###`
+  heading with its id, slug and a title saying what users can do, then its outcomes, waits, actors,
+  a one-line user story, what users get, and a few acceptance criteria. Write them from the user's
+  side, as short bullets, and keep the criteria plain: no Given / When / Then, which the spec adds.
+  Delete the template's optional parts that don't apply.
 - A hook runs `intents check` on the file after you write it. Fix any error it reports.
 
 ## 6. Review, then open a PR
