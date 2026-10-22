@@ -4,8 +4,9 @@ Every non-trivial change starts here, before any code. Each feature gets a folde
 `intent/YYYY-MM-DD-<slug>/`, which accumulates `intent.md`, `spec.md`, and `plan.md`. Each file is
 approved by merging its PR.
 
-**Stories.** A larger intent can list 2–4 stories in its `## Stories` section. Each story is specced,
-planned and built on its own, in a folder of its own, `intent/YYYY-MM-DD-<slug>/<story-slug>/`. That
+**Stories.** A larger intent can list 2–4 stories in its `## Stories` section, each under its own
+heading, written from the user's side: a title, a user story, what users get, and plain acceptance
+criteria. Each story is specced, planned and built on its own, in a folder of its own, `intent/YYYY-MM-DD-<slug>/<story-slug>/`. That
 folder, or the intent's folder when it has no stories, is the **work folder** every stage after the
 intent takes. Its name without a date is the slug that branches and commits use.
 
@@ -44,7 +45,7 @@ Small fixes (typos, one-line bugs, dependency bumps) skip this and go straight t
 ## Relations between intents
 Write them so they can be checked, not as prose:
 - **`Depends on:`** in the header names intents or stories by slug, or pull requests as `#N`. A
-  story's own dependencies go after `After:` on its line.
+  story's own dependencies go on its `**After:**` line.
 - **`Supersedes:`** names the intent this one replaces. The old intent's Status becomes `superseded`
   in the same PR.
 - **`→ follow-up: <slug>`** at the end of an out-of-scope item reserves a slug for work someone will

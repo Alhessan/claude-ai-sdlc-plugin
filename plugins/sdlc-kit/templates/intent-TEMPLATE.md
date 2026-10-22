@@ -33,14 +33,33 @@ the Problem. End each line with a link to its group in Evidence.
 ## Stories
 Delete this section if the intent ships as one piece, which most do. Otherwise split it into 2–4
 stories. Each one is specced, planned and built on its own, in its own folder (`<story-slug>/`), and
-each must be safe to ship alone:
+each must be safe to ship alone.
 
-- **S1 <story-slug>**: <what ships>. Outcomes: <numbers>.
-- **S2 <story-slug>**: <what ships>. Outcomes: <numbers>. After: S1.
+Give each story the block below, under its own `###` heading. Write it for the product owner, from
+the user's side: what they can do once it ships, not how it's built. Keep each part to short
+bullets. **Outcomes** names the numbered desired outcomes the story delivers. **Acceptance
+criteria** are the first checks a user could make once it ships, in plain words; the spec turns
+them into Given / When / Then rows.
 
-`After: S1` waits for S1's spec to merge, which is enough to build against its contract. Write
-`After: S1 ships` to wait for it to ship. Story slugs name branches and commits, so they must be
-unique across `intent/`.
+**After** says what the story waits for. `After: S1` waits for S1's spec to merge, which is enough
+to build against its contract. `After: S1 ships` waits for S1 to ship. Delete the line if the story
+waits for nothing. Story slugs name branches and commits, so they must be unique across `intent/`.
+
+### S1 <story-slug>: <title: what users can do once it ships>
+<One sentence on what ships.>
+
+- **Outcomes:** <numbers>
+- **After:** <S1, S1 ships, or a slug; delete if none>
+- **Actors:** <who uses it>
+- **User story:** As a <role>, I want <to do something>, so <what it gets them>.
+
+**What users get**
+- <a capability, in the user's words>
+- <what stays as it is today, when that matters>
+
+**Acceptance criteria**
+- <something a user can check: "an analyst can …", "a rule that … never …">
+- <the main error or edge case, and what the user sees>
 
 ## Users affected
 <Who uses the affected parts: end users, admins, operators, other services…>
@@ -98,7 +117,8 @@ file wrong. When that happens, don't overwrite it:
 - add a row here for each amendment;
 - leave `Status` alone. An amendment doesn't re-run approval of the whole intent.
 
-To drop a story, strike its whole line through the same way; a struck-through story no longer counts.
+To drop a story, strike its heading through (`### ~~S3 <story-slug>: <title>~~`) and add the note
+after it; a struck-through story no longer counts.
 
 A struck-through line that turned out to be wrong is more useful to the next reader than a clean file
 that hides the correction.

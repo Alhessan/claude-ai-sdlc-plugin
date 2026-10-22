@@ -60,7 +60,9 @@ Use these sections:
 2. **Requirements:** numbered and testable (`R1`, `R2`, …), split into functional and non-functional
    (latency, cost, limits).
 3. **Acceptance criteria:** a table of Given / When / Then rows, each labeled with the requirement it
-   proves, e.g. `A1 (R1)`. These become the tests in `plan.md`.
+   proves, e.g. `A1 (R1)`. These become the tests in `plan.md`. For a story, start from the
+   acceptance criteria in its section of the intent: each one becomes at least one row. Say which
+   you couldn't keep, and why.
 4. **Design:** user flows and UI states (including every locale/direction the product supports), API
    contracts (method, path, auth, request/response, errors), data model changes, and which services
    talk to which.

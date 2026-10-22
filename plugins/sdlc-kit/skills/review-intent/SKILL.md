@@ -42,8 +42,8 @@ during the build.
   and add a dated amendment note. The template's Decisions section explains the convention. Never
   overwrite silently: a reader has to see what changed and why.
 - **Add a Decisions row per change:** what changed, what forced it, who decided, the date.
-- **Adding or dropping a story is an amendment too.** Strike a dropped story's whole line through,
-  so it stops counting. Never renumber or reuse a story's id or slug.
+- **Adding or dropping a story is an amendment too.** Strike a dropped story's heading through, so
+  it stops counting. Never renumber or reuse a story's id or slug.
 - **Branch `docs/intent-<slug>-amend-<topic>`,** commit the intent alone, and open a PR against the default branch titled
   `docs(intent): amend <slug> — <what changed>`. Never merge it.
 - Then work only the questions the amendment reopens. Don't re-interview what's already settled.
@@ -56,7 +56,9 @@ The listed open questions are the easy half. Review the whole intent for what it
   Problem or *Where we are today* belong in **Evidence** at the end; move them there and leave a
   plain-language line with a link. An older intent with no Evidence section is fine as it is.
 - **An untestable outcome.** If "desired outcome" can't become Given/When/Then rows in a spec, it's
-  too vague. Say what's missing.
+  too vague. Say what's missing. The same goes for a story's acceptance criteria. A story written
+  in technical terms, or with no title, user story, *What users get* or acceptance criteria, needs
+  them in the template's form. An older one-line story is fine as it is.
 - **Systems affected.** Ticked with no reason, or unticked though the code says otherwise.
 - **Missing constraints,** especially ones `CLAUDE.md` or a policy skill calls out: performance, cost,
   privacy, compliance, localization, backward compatibility, deadlines.

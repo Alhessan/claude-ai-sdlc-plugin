@@ -162,7 +162,7 @@ step touches a database and the plan names integration tests, run them against a
    (`gh pr create --base <branch>`) titled `feat: <intent title>`,
    with the story appended for a story (`feat: <intent title>: S2 <story-slug>`).
    Pass the body with `--body-file` (a file), not inline. Its body contains:
-   - links to `intent.md`, `spec.md`, and `plan.md`, and for a story, its line from the intent;
+   - links to `intent.md`, `spec.md`, and `plan.md`, and for a story, its title from the intent;
    - for the intent's last story, the intent's outcome checks and their results;
    - **Evidence:** every check command with pass/fail/skip counts, the verifier's criteria table, the
      `test-lock check` output, and the end-to-end result (essential when there's no CI);
