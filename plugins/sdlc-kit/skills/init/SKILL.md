@@ -75,6 +75,18 @@ run it, otherwise follow `origin/HEAD`. Merge this into the checked-in `.claude/
 Use the remote branch, so it reads what's merged rather than a stale local copy. Tell the user that
 running `intents` from their own shell or CI needs the same `INTENTS_BASE` exported, or `--base`.
 
+**Where the product owner reviews drafts (optional).** Ask whether the product owner reviews draft
+intents in GitHub pull requests, or would rather read and comment on a Claude Doc (they need a
+claude.ai account in the organization). Only for a doc, merge `"SDLC_REVIEW": "doc"` into the `env`
+block. Pull requests are the default, so write nothing for them.
+
+**Jira (optional).** Ask "Does this project track work in Jira?" Only on a yes, ask for the project
+key, and merge `"SDLC_JIRA_PROJECT": "<KEY>"` into the `env` block. Add a type, link or status
+override only when the user names one that differs from the defaults in `/sdlc-kit:sync-jira`
+(`Epic`, `Story`, `Subtask`, `Blocks`, `Won't Do`). Subtasks from plan steps are off unless they ask
+for `"SDLC_JIRA_SUBTASKS": "on"`. On a no, write nothing: no skill mentions Jira without the key.
+Tell them the Atlassian connector has to be signed in (`/mcp`) by whoever runs the sync.
+
 **The plugin (optional).** Offer to add the marketplace and plugin to the checked-in
 `.claude/settings.json`, so teammates get the kit automatically. Ask for the marketplace repo (default `mustafamg/claude-ai-sdlc-plugin`; a fork works too) and merge, don't overwrite:
 ```json

@@ -21,11 +21,12 @@ folder. A larger intent lists 2–4 stories, and each one gets its own spec, pla
 |---|---|---|
 | `/sdlc-kit:init` | Setup | Scaffolds a project: `CLAUDE.md` sections, `intent/` templates, `.gitignore`, protected paths, starter policy skills, and optionally a runbook and team settings. |
 | `/sdlc-kit:new-intent <idea>` | 1 Plan | Interviews you, gathers evidence from the code (verified vs. assumed), and drafts `intent.md`. |
-| `/sdlc-kit:review-intent [folder]` | 1 Plan | Finds the gaps a draft intent leaves, resolves every open question with you, records the Decisions table, and sets the status to accepted, deferred (with a revisit month) or rejected. It never merges: that's still the human's approval. |
+| `/sdlc-kit:review-intent [folder]` | 1 Plan | Finds the gaps a draft intent leaves, resolves every open question with you, records the Decisions table, and sets the status to accepted, deferred (with a revisit month) or rejected. It never merges: that's still the human's approval. With `SDLC_REVIEW=doc` it publishes the draft as a Claude Doc for the product owner and reads their comments back. |
 | `/sdlc-kit:new-spec <folder>` | 2 Design | Writes numbered requirements, Given/When/Then acceptance criteria, and a design. Applies the project's policy skills, flags conflicts, and says when no spec is needed. |
 | `/sdlc-kit:new-plan <folder>` | 3 Plan | Works in plan mode. Checks the spec against the code and writes `plan.md`: an acceptance criterion → test → step table, ordered steps, lanes, risks, and verification. |
 | `/sdlc-kit:build <folder> [step\|next\|finish]` | 3–4 Build/Test | Test-first, one step at a time: tests from the spec, confirm they fail for the right reason, lock them, code until green, run checks, commit, verify. Resumes half-done steps and supports parallel lanes. `finish` opens the PR with evidence. |
 | `verifier` subagent | 4 Test | Read-only. Checks locks, weakened tests, and test-support changes, runs every check, and grades each acceptance criterion PASS/FAIL/MISSING with quoted evidence. |
+| `/sdlc-kit:sync-jira [slug] [--pull]` | Optional | Only with `SDLC_JIRA_PROJECT` set. Mirrors accepted intents into Jira: an epic per intent with stories, a Jira story per story, blocked-by links, and optionally a subtask per plan step. Edits and comments made in Jira come back as intent amendments, never straight into the repo. |
 | `/sdlc-kit:deploy` | 5 Deploy | Follows the project's runbook: read-only status, then human go-ahead, then a rollback point, then one step at a time, then a report. |
 | Guard hook | All | Blocks access to real `.env*` files and edits to paths listed in `.claude/protected-paths`. |
 | Test-lock hook + `test-lock` | 3–4 | Freezes tests once written (below). |
@@ -149,7 +150,7 @@ That **reserves** `guest-chat-retention`:
 The marker works anywhere in an intent folder (intent, spec or plan) and in policy skills. If Claude
 writes "a separate intent" or "a follow-up" with no marker, the hook adds a reminder.
 
-Three commands, on PATH while the plugin is enabled. None of them changes anything:
+Four commands, on PATH while the plugin is enabled. None of them changes anything:
 - **`intents status [<slug>]`** derives every stage from git and is never declared: draft (including
   drafts that exist only on `docs/intent-*` branches), the intent's Status, then specced, planned,
   building and shipped. It also lists reserved slugs and who waits on them.
@@ -157,6 +158,10 @@ Three commands, on PATH while the plugin is enabled. None of them changes anythi
   isn't marked superseded, a dependency cycle, a slug used twice, a spec outside its story's folder.
 - **`intents deps <slug or work folder>`** exits 1 unless a story's dependencies are met. Pull
   requests are checked with `gh`.
+- **`intents export [<slug>]`** prints merged intents as JSON for a tracker: each story's title, a
+  ready-made description and its digest, what it's blocked by, its stage, and once they're merged,
+  its spec's acceptance table and its plan's steps. `/sdlc-kit:sync-jira` builds tickets from it,
+  and a team on another tracker can build its own sync the same way.
 
 The skills rely on these:
 - `/sdlc-kit:new-intent` and `/sdlc-kit:review-intent` read `status` to find overlaps, drafts on other
@@ -191,6 +196,52 @@ can use that instead:
 
 The default branch is one per repo, not per intent. To build one intent against a release branch,
 point `INTENTS_BASE` and `CLAUDE.md` at it for that work.
+
+## Jira and product-owner review (optional)
+Two features for teams whose product owner works outside GitHub. Both are off unless the project
+turns them on in the `env` block of its checked-in `.claude/settings.json`, and they don't depend on
+each other. `/sdlc-kit:init` asks about both.
+
+```json
+{ "env": { "SDLC_REVIEW": "doc", "SDLC_JIRA_PROJECT": "KAL" } }
+```
+
+**Review drafts in a Claude Doc (`SDLC_REVIEW=doc`).** `/sdlc-kit:review-intent` publishes the draft
+intent as a Claude Doc and links it from the intent's header and its PR. The product owner reads the
+doc and comments on it; the next `review-intent` run brings each comment into the review, edits
+`intent.md`, updates the doc in place and replies in the thread. Approval stays on GitHub: the
+product owner approves the PR, and merging it accepts the intent. The doc then points to where the
+discussion continues. It needs the Claude Docs connector, and someone shares the doc with the
+product owner from its **Share** button.
+
+**Mirror accepted intents in Jira (`SDLC_JIRA_PROJECT=<KEY>`).** `/sdlc-kit:sync-jira` turns each
+merged intent into tickets:
+
+| Intent | Jira |
+|---|---|
+| An intent with stories | an epic: its Problem, Desired outcome and story list |
+| Each `### Sn` story | a story under the epic: the user story, *What users get* and acceptance criteria |
+| An intent without stories | one story, no epic |
+| `After:`, `Depends on:` | "is blocked by" links |
+| A merged spec | its link and acceptance tests, added to the story |
+| A merged plan | one subtask per step, only with `SDLC_JIRA_SUBTASKS=on` |
+| A dropped story | a comment, then `Won't Do` |
+
+- **The repo stays the source.** Every ticket is labelled `sdlc:<slug>`, so the sync updates the same
+  tickets each time and never duplicates them. Nothing is written back into an accepted intent.
+- **Jira changes come back as amendments.** Before writing, the sync reads each ticket. A
+  description someone edited in Jira isn't overwritten: it becomes an amendment through
+  `/sdlc-kit:review-intent`, in a PR a human merges. `--pull` does only this half.
+- **The team moves tickets by hand.** The sync never changes a ticket's status, except to close a
+  dropped story.
+- **Settings:** `SDLC_JIRA_EPIC_TYPE`, `SDLC_JIRA_STORY_TYPE`, `SDLC_JIRA_SUBTASK_TYPE`,
+  `SDLC_JIRA_BLOCKS_LINK` and `SDLC_JIRA_DROPPED_STATUS` override the names when the project's Jira
+  differs (`Epic`, `Story`, `Subtask`, `Blocks`, `Won't Do`).
+- **It needs the Atlassian connector,** signed in with `/mcp` by whoever runs the sync. Run it after an
+  intent, spec, plan or amendment merges.
+
+Without `SDLC_JIRA_PROJECT`, no skill mentions Jira, and `/sdlc-kit:sync-jira` stops with these setup
+steps rather than asking for a key.
 
 ## Install
 There are two ways to install. Both install the plugin for your user, so every project and session

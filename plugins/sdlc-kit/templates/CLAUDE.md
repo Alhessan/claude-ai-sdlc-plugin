@@ -35,6 +35,9 @@ Run commands from inside each project's directory.
   they mean this one: branch off it, open PRs against it, and gate on what's merged to it. One
   concern per PR. Deploys follow `docs/deployment.md`
   (`/sdlc-kit:deploy`).
+- <Delete this line unless `.claude/settings.json` turns these on. The product owner reviews draft
+  intents in a Claude Doc (`SDLC_REVIEW=doc`) and approves on the PR. Accepted intents are mirrored
+  to Jira project `<KEY>` with `/sdlc-kit:sync-jira`; change the intent, not the ticket.>
 
 ## Verifying your work
 
