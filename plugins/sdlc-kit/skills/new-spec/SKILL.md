@@ -85,4 +85,5 @@ Go through the draft with the user, starting with conflicts. Then:
 2. Open a PR against the default branch titled `docs(spec): <title>`. The body lists the conflicts and open questions that need a
    decision, and tags the policy owners named in the policy skills.
 3. **Never merge it.** Merging means the product owner approves building it. The next step is
-   `/sdlc-kit:new-plan <work folder>`.
+   `/sdlc-kit:new-plan <work folder>`. If `SDLC_JIRA_PROJECT` is set, also say that
+   `/sdlc-kit:sync-jira <slug>` adds the spec and its acceptance tests to the ticket once it's merged.

@@ -1,6 +1,6 @@
 ---
 name: review-intent
-description: Review a drafted intent.md for gaps, resolve every open question with the user, and record the decisions so a human can approve it by merging (Stage 1 of the AI-native SDLC). Use when someone asks to review, resolve, sign off, defer, or reject an intent, to amend an intent that's already accepted, or asks what's blocking one. Do NOT use to draft a new intent (/sdlc-kit:new-intent), to design one (/sdlc-kit:new-spec), or to review code.
+description: Review a drafted intent.md for gaps, resolve every open question with the user, and record the decisions so a human can approve it by merging (Stage 1 of the AI-native SDLC). When the project sets SDLC_REVIEW=doc, the product owner reviews the draft as a Claude Doc this skill publishes and reads back. Use when someone asks to review, resolve, sign off, defer, or reject an intent, to read the product owner's comments on its review doc, to amend an intent that's already accepted, or asks what's blocking one. Do NOT use to draft a new intent (/sdlc-kit:new-intent), to design one (/sdlc-kit:new-spec), or to review code.
 argument-hint: "[intent folder | backlog]"
 ---
 
@@ -24,8 +24,9 @@ intent complete enough that the decision is easy, and to record what was decided
 ## 1. Load context
 Read `CLAUDE.md`, `intent/README.md`, the intent itself, and the evidence it links to. If the intent
 has a PR, read it and its review comments (`gh pr view --comments`); decisions already made there must
-end up in the file. Load the project's policy skills (those whose description starts with `Policy -`)
-to know which surfaces need an owner's answer.
+end up in the file. If the header has a **Review doc** link, the product owner reviews in a Claude
+Doc: read its comments and edits as well (§8). Load the project's policy skills (those whose
+description starts with `Policy -`) to know which surfaces need an owner's answer.
 
 ## 2. Amendment mode: the intent is already accepted
 If the intent is on the default branch with `Status: accepted` (or `deferred`/`rejected`), this is an
@@ -47,6 +48,9 @@ during the build.
 - **Branch `docs/intent-<slug>-amend-<topic>`,** commit the intent alone, and open a PR against the default branch titled
   `docs(intent): amend <slug> — <what changed>`. Never merge it.
 - Then work only the questions the amendment reopens. Don't re-interview what's already settled.
+- **An amendment from Jira** (`/sdlc-kit:sync-jira` found a change made there): name the ticket and
+  the person in the Decisions row, e.g. "from PROJ-12, comment by <name>".
+- **A Review doc that doesn't say it's closed yet:** add its closing line (§8).
 
 ## 3. Find the gaps
 The listed open questions are the easy half. Review the whole intent for what it doesn't say:
@@ -134,7 +138,49 @@ Show the full diff and **ask before committing**. Once they confirm:
 3. Update the PR body with the outcome and anything still blocking it.
 4. **Never merge it.** Merging is the product owner's approval, including for `deferred` and
    `rejected`, which are merged so the record stays in `intent/`.
+5. With `SDLC_REVIEW=doc`, publish or update the review doc now (§8), so it matches what you pushed.
 
 Then say what's next: `/sdlc-kit:new-spec intent/<folder>` once the PR is merged as `accepted` (for an
 intent with stories, `intent/<folder>/<story-slug>`, starting with a story that waits on nothing), or
-who is being waited on.
+who is being waited on. If `SDLC_JIRA_PROJECT` is set, also say that `/sdlc-kit:sync-jira <slug>`
+creates the Jira tickets once the PR is merged.
+
+## 8. Review in a Claude Doc (`SDLC_REVIEW=doc`)
+Run `echo "SDLC_REVIEW=$SDLC_REVIEW"`. When it says `doc`, the product owner reviews drafts as a
+Claude Doc, which reads better than a PR and takes comments on the rendered text. Unset, `pr`, or a
+command you can't run means review stays in the PR: skip this section, and don't mention the doc.
+
+The doc is a copy to read and comment on. `intent.md` stays the source, and **approval stays on
+GitHub**. This needs the Claude Docs connector. If it isn't available, say so, carry on in the PR,
+and tell the user to enable it. Before the first docs call, call the connector's `guide` for
+`topic.index` and `topic.comments`.
+
+**The first time** (the header has no **Review doc** link), after §7 pushes the branch:
+1. Create a doc named `Intent: <title>` from `intent.md`, without its Evidence section, which is for
+   engineers. In its place, put one line linking to `intent.md` on the branch. Under the title, add:
+   "Draft for review. Comment on anything here; agreed changes go into the intent and this doc is
+   updated to match. To approve, approve the pull request: <PR link>."
+2. Add `- **Review doc:** <doc link>` to the intent's header, and a `Review doc:` line to the PR body.
+   Commit it as `docs(intent): link the review doc for <slug>`, and push.
+3. No tool can share a doc. Tell the user to click **Share** in the doc and give the product owner
+   comment access.
+
+**On later runs:**
+1. **Read the feedback:** list the doc's comment threads, and compare its text with `intent.md` to
+   find edits made directly in the doc. Each open thread and each edit becomes a gap in §3, with your
+   proposed answer, resolved with the user in §4 like any other. An edit is a suggestion, never a
+   decision.
+2. **Update the doc after §7 commits.** Change only the sections that changed, rewording in place,
+   so comments on unchanged text stay attached. If a change would remove words a comment is attached
+   to, narrow it; if you can't, ask in that thread.
+3. **Reply in each thread you acted on,** once the user agrees the answer: what changed, or why
+   nothing did, in a line or two. Never resolve a thread the product owner wrote in. They close it.
+
+**Approval:** a comment saying "approved" isn't the approval. Reply with the PR link and ask them to
+approve it there. Someone then merges it, with their name in **Approved by**.
+
+**Once the intent is merged,** the doc stops changing. Add a line under its title: "Accepted on
+<date>. Discussion continues in Jira: <link to the epic or story>" when the project uses Jira
+(`/sdlc-kit:sync-jira` adds it when it creates the tickets), or "…continues in amendment pull
+requests: <link to intent.md on the default branch>" when it doesn't. Later changes are amendments
+(§2), not doc edits.

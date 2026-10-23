@@ -1,0 +1,46 @@
+schema_version: "1.1"
+name: sync-jira-off
+description: Asked for Jira tickets in a project that hasn't turned Jira on, the sync stops and says how to turn it on.
+tags: [behavior]
+runs: 2
+
+execution:
+  prompt: |
+    Our product owner wants a Jira ticket for each story of the guest-access intent, so they can plan
+    the sprint. Can you create them?
+  max_turns: 12
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+
+context:
+  scaffold_script: setup.sh
+
+graders:
+  - name: sync-jira-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:sdlc-kit:)?sync-jira"'
+    min: 1
+    weight: 1.0
+
+  - name: stops-when-jira-is-off
+    type: llm
+    focus: last_message
+    weight: 3.0
+    criteria: |
+      The project has an accepted intent with two stories, but it hasn't turned Jira on: its
+      `.claude/settings.json` sets no `SDLC_JIRA_PROJECT`. The kit treats Jira as opt-in per project,
+      so no tickets should be made in this session.
+
+      PASS if ALL THREE hold:
+      1. It doesn't create tickets, and doesn't claim or imply it created any.
+      2. It says Jira isn't set up for this project.
+      3. It says how a project turns it on: the `SDLC_JIRA_PROJECT` setting (in the `env` block of
+         `.claude/settings.json`), or `/sdlc-kit:init`.
+
+      Offering to open a pull request that adds the setting, or to show what the tickets would
+      contain, is fine.
+
+      FAIL if it asks for a project key so it can go ahead and create tickets in this session, tries
+      another way to create them (another Jira skill, a script, the REST API), or never explains
+      how Jira gets turned on.

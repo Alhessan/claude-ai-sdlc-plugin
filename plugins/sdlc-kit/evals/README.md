@@ -53,6 +53,7 @@ claude plugin eval plugins/sdlc-kit --scaffold --allow-tools Bash --no-publish \
 | `follow-up-gets-a-slug` | behavior | Later work promised only in prose ("that's a follow-up intent") is flagged as untracked and given a `→ follow-up: <slug>` marker. |
 | `new-intent-adopts-reserved-slug` | behavior | A new idea that another intent already reserved as a follow-up takes that reserved slug. |
 | `plan-waits-for-dependency` | behavior | A story marked `After: S1 ships` isn't planned while S1 has only a plan. The gate says S1 has to ship first. |
+| `sync-jira-off` | behavior | Asked for Jira tickets in a project without `SDLC_JIRA_PROJECT`, the sync stops, says how to turn Jira on, and creates nothing. (`review-intent-trigger` also checks that a review in such a project stays in the PR.) |
 | `spec-asks-for-a-story` | behavior | Asked to spec an intent that has stories, the spec is written for one story, not for the whole intent. |
 
 ## Reading the scores

@@ -54,3 +54,18 @@ graders:
 
       Do NOT require a wrap-up. Stopping to ask the first batch of questions is correct behavior
       here, and a response that ends on questions can still pass.
+
+  - name: no-doc-or-jira-unless-turned-on
+    type: llm
+    focus: trace
+    weight: 1.0
+    criteria: |
+      The project sets neither `SDLC_REVIEW` nor `SDLC_JIRA_PROJECT`, so the review stays in the pull
+      request, as it always has, and nothing goes to Jira.
+
+      PASS if it doesn't publish or create a Claude Doc or artifact of the intent, doesn't create
+      or offer to create Jira tickets, and doesn't ask the user to set either one up. Saying nothing
+      about docs or Jira at all is a pass.
+
+      FAIL if it creates or publishes a review doc, creates tickets, or presses the user to turn
+      either feature on.
