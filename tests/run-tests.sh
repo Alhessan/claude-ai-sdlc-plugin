@@ -603,6 +603,21 @@ outp 0 "an Arabic comma in Outcomes warns" "warning: $K:17: .*1, 2" "$I" check $
 outp 1 "an Arabic comma in After warns next to the error" 'warning: intent/2026-01-15-lambda/intent.md:14: .*S1, S2' "$I" check intent/2026-01-15-lambda/intent.md
 outp 1 "an Arabic comma in After is still an error" "error: intent/2026-01-15-lambda/intent.md:13: can't read 'S1" "$I" check intent/2026-01-15-lambda/intent.md
 outp 0 "the hook passes keyword warnings as context" 'additionalContext.*header field' ih "$(iwrite $K)"
+mkdir -p intent/2026-01-15-xi
+cat > intent/2026-01-15-xi/intent.md <<'EOF'
+# Intent: xi
+
+- **Author:** t
+- **Status:** accepted
+
+## Stories
+### S1 x-one: One
+- **Outcomes:** 1
+
+### S2 x-two: Two
+- **after:** S1
+EOF
+outp 0 "a lowercase story field warns, since After: is read only as written" 'warning: intent/2026-01-15-xi/intent.md:11: .*Outcomes, After, Actors, User story' "$I" check intent/2026-01-15-xi/intent.md
 mkdir -p intent/2026-01-15-nu
 sed 's/draft | accepted | deferred | rejected | superseded/draft/' "$KIT/templates/intent-TEMPLATE.md" > intent/2026-01-15-nu/intent.md
 outp 0 "the template's English keywords give no new output" 'no problems found' "$I" check intent/2026-01-15-nu/intent.md
