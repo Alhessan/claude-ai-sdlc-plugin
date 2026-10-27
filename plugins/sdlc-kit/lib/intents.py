@@ -213,7 +213,8 @@ def arabic_digits(where, n, line):
 
 
 def unknown_field(where, n, kind, name, known):
-    if name.lower() in (k.lower() for k in known):
+    # Header fields are read in any case; `After:` only as written, so story fields must match exactly.
+    if (name.lower() in (k.lower() for k in known)) if kind == "header" else name in known:
         return []
     return [warn(where, n, f"the {kind} field {name!r} isn't one intents reads, so it's skipped. Keep "
                            f"field names in English: {', '.join(known)}")]
